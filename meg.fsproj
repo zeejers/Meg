@@ -5,6 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>Meg</RootNamespace>
     <PackAsTool>true</PackAsTool>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

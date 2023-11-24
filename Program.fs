@@ -8,7 +8,7 @@ open Argu
 
 let [<Literal>] VERSION = "0.0.1" 
 type CreateArgs =
-    | [<AltCommandLine("-d ")>] DbName of db_name: string
+    | [<AltCommandLine("-d")>] DbName of db_name: string
     | [<AltCommandLine("-c")>] ConnectionString of connection_string: string
     | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
 
