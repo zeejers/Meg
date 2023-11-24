@@ -1,0 +1,81 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/z/src/github.com/EZMigration/EZMigration.fsproj": {}
+  },
+  "projects": {
+    "/home/z/src/github.com/EZMigration/EZMigration.fsproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/z/src/github.com/EZMigration/EZMigration.fsproj",
+        "projectName": "EZMigration",
+        "projectPath": "/home/z/src/github.com/EZMigration/EZMigration.fsproj",
+        "packagesPath": "/home/z/.nuget/packages/",
+        "outputPath": "/home/z/src/github.com/EZMigration/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/z/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "/usr/share/dotnet/sdk/7.0.103/FSharp/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "dependencies": {
+            "FSharp.Core": {
+              "include": "Runtime, Compile, Build, Native, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[7.0.0, )",
+              "generatePathProperty": true
+            },
+            "Npgsql.FSharp": {
+              "target": "Package",
+              "version": "[5.7.0, )",
+              "generatePathProperty": true
+            },
+            "SQLProvider": {
+              "target": "Package",
+              "version": "[1.3.22, )",
+              "generatePathProperty": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[7.0.3, 7.0.3]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/7.0.103/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
