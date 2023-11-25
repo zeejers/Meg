@@ -1,8 +1,118 @@
-# MEG - Dotnet Migration Tool
+# MEG - DotNet Migration Tool (WIP)
 
-## Package and Release
+Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Currently only supports PostgreSQL but will support other providers in the future.
+
+`create` - creates initial database <br />
+`drop` - drops a database by name <br />
+`migrate` - runs migrations in the specified migration folder. Defaults to folder "Migrations" <br />
+`gen` - generates a migration via DSL. TODO. <br />
+
 ```
-dotnet pack -c release -o nupkg
-dotnet tool install --add-source ./nupkg -g meg
-dotnet tool install -g meg
+meg --help
+
+$USAGE: meg [--help] [--version] [<subcommand> [<options>]]
+
+SUBCOMMANDS:
+
+    create <options>      Create the initial database.
+    drop <options>        Drop the database.
+    migrate <options>     Run migrations in the migrations directory
+
+    Use 'meg <subcommand> --help' for additional information.
+
+OPTIONS:
+
+    --version             Print the version.
+    --help                display this list of options
+```
+
+## Install
+
+```bash
+# Global
+dotnet tool install --global meg
+
+meg --help
+meg create --help
+meg migrate --help
+meg drop --help
+```
+
+```bash
+# Local
+dotnet new tool-manifest
+dotnet tool install meg
+```
+
+# Parameters
+
+## Create
+
+```bash
+$USAGE: meg create [--help] [--dbname <db name>]
+                  [--connectionstring <connection string>]
+                  [--provider <postgresql|mssql|mysql|sqlite>]
+
+OPTIONS:
+
+    --dbname, -d <db name>
+                          Specify the name of the database to create.
+    --connectionstring, -c <connection string>
+                          Specify the database connection string for the Admin
+                          database. Must be able to create DBs with the
+                          permissions of the user.
+    --provider, -p <postgresql|mssql|mysql|sqlite>
+                          Specify the database provider.
+    --help                display this list of options.
+```
+
+## Drop
+
+```bash
+$USAGE: meg drop [--help] [--dbname <db name>]
+                [--connectionstring <connection string>]
+                [--provider <postgresql|mssql|mysql|sqlite>]
+
+OPTIONS:
+
+    --dbname, -d <db name>
+                          Specify the name of the database to create.
+    --connectionstring, -c <connection string>
+                          Specify the database connection string for the Admin
+                          database. Must be able to create DBs with the
+                          permissions of the user.
+    --provider, -p <postgresql|mssql|mysql|sqlite>
+                          Specify the database provider.
+    --help                display this list of options.
+```
+
+## Migrate
+
+```bash
+$USAGE: meg migrate [--help] [--connectionstring <connection string>]
+                   [--migrationdirectory <migration directory>]
+                   [--provider <postgresql|mssql|mysql|sqlite>]
+
+OPTIONS:
+
+    --connectionstring, -c <connection string>
+                          Specify the database connection string for the
+                          database. Must be able to create and update tables
+                          with the permissions of the user.
+    --migrationdirectory, -i <migration directory>
+                          Specify the directory that contains your order-named
+                          migration .SQL files.
+    --provider, -p <postgresql|mssql|mysql|sqlite>
+                          Specify the database provider.
+    --help                display this list of options.
+```
+
+# Env Vars
+You can supplement command line usage with some ENV vars in your project to reduce how often you have to enter params in the command line. Having these set will allow them to be used as defaults.
+
+```bash
+DB_CONNECTION_STRING
+DB_NAME 
+DB_PROVIDER
+MIGRATION_DIRECTORY
 ```

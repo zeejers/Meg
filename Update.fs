@@ -1,6 +1,5 @@
 module Meg.Migrate
 
-open FSharp.Data.Sql
 open System.IO
 open Npgsql.FSharp
 open Npgsql
