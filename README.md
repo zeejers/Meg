@@ -2,10 +2,10 @@
 
 Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Currently only supports PostgreSQL but will support other providers in the future.
 
-`create` - creates initial database by name.<br />
-`drop` - drops a database by name. <br />
-`migrate` - runs migrations in the specified migration folder. Defaults to folder "Migrations". Migrations are just SQL scripts. <br />
-`gen` - generates a migration via DSL. TODO. <br />
+- `create` - Creates initial database by name.
+- `drop` - Drops a database by name.
+- `migrate` - Runs migrations in the specified migration folder. Defaults to folder "Migrations". Migrations are just SQL scripts.
+- `gen` - Generates a migration via DSL. TODO.
 
 
 ## Install

@@ -6,7 +6,7 @@ open Meg.Config
 
 open Argu
 
-let [<Literal>] VERSION = "0.0.1" 
+let [<Literal>] VERSION = "0.0.2" 
 type CreateArgs =
     | [<AltCommandLine("-d")>] DbName of db_name: string
     | [<AltCommandLine("-c")>] ConnectionString of connection_string: string
