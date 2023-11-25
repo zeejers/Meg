@@ -17,7 +17,7 @@
     <Compile Include="Config.fs" />
     <Compile Include="Create.fs" />
     <Compile Include="Drop.fs" />
-    <Compile Include="Update.fs" />
+    <Compile Include="Migrate.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
