@@ -2,6 +2,7 @@
 open Meg.Drop
 open Meg.Migrate
 open Meg.Config
+open Meg.Generate
 
 open Argu
 
@@ -52,18 +53,14 @@ and MigrateArgs =
 
 and GenMigrationArgs =
     | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
-    | [<CliPrefix(CliPrefix.None)>] Migration_Name
-    | [<CliPrefix(CliPrefix.None)>] Table_Name
-    | Schema_Definitions of string list
+    | [<MainCommand>] Schema_Definition of string list
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
             | Provider _ -> "Specify the database provider."
-            | Migration_Name -> "Specify the name of the migration. Will be prefixed by current datetime."
-            | Table_Name -> "Specify the name of the table."
-            | Schema_Definitions _ ->
-                "Definition of schema. Example... Id:serial:pk name:string description:text hobbies:jsonb"
+            | Schema_Definition _ ->
+                "Specify the schema definition of the migration. Format MigrationName TableName Id:Serial:Pk Name:String Description:Text"
 
 and GenArgs =
     | [<CliPrefix(CliPrefix.None)>] Migration of ParseResults<GenMigrationArgs>
@@ -72,8 +69,6 @@ and GenArgs =
         member this.Usage =
             match this with
             | Migration _ -> "Generate a new migration providing a schema."
-
-
 
 and MegArgs =
     | Version
@@ -90,9 +85,6 @@ and MegArgs =
             | Drop _ -> "Drop the database."
             | Migrate _ -> "Run migrations in the migrations directory"
             | Gen _ -> "Generate"
-
-
-
 
 
 [<EntryPoint>]
@@ -141,7 +133,21 @@ let main argv =
                 |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
 
             runMigrations (connString, migrationsDirectory, provider)
-        | Gen args -> printfn "Generating schema definition %A" args
+        | Gen args ->
+            match args.GetSubCommand() with
+            | Migration args ->
+                printfn "Generating Schema Definition"
+
+                let provider =
+                    args.TryGetResult(GenMigrationArgs.Provider)
+                    |> Option.defaultValue (Defaults.DB_PROVIDER)
+
+                match args.GetResult(GenMigrationArgs.Schema_Definition) with
+                | schemaName :: tableName :: fields ->
+                    printfn "Gen Migration Command: Schema: %A Table: %A definitions: %A" schemaName tableName fields
+                // genMigrations (migrationName, tableName, provider, schemaDefinitions)
+                | _ -> failwith "You must provide a schema name, table, and field definitions."
+
 
         0
     with ex ->
