@@ -7,7 +7,7 @@ open Meg.Generate
 open Argu
 
 [<Literal>]
-let VERSION = "0.0.2"
+let VERSION = "0.0.3"
 
 type CreateArgs =
     | [<AltCommandLine("-d")>] Db_Name of db_name: string
