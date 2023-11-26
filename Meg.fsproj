@@ -19,6 +19,7 @@
     <Compile Include="Create.fs" />
     <Compile Include="Drop.fs" />
     <Compile Include="Migrate.fs" />
+    <Compile Include="Generate.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
