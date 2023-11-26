@@ -1,43 +1,36 @@
 module Meg.Drop
+
 open Npgsql
 open System
 
-open Meg.Config
+open Meg.Providers
 
-let dropPostgresql (connectionString: string, databaseName: string) =
-    use conn = new NpgsqlConnection(connectionString)
-    try
-        conn.Open()
-        let dbExistsQuery = $"SELECT 1 FROM pg_database WHERE datname='{databaseName}'"
-        printfn $"Executing db command: {dbExistsQuery}"
-        use cmd = new NpgsqlCommand(dbExistsQuery, conn)
-        let dbExists =
-            try
-                match cmd.ExecuteScalar() with
-                | null -> false
-                | result -> 
-                    printfn "QUERY RESULT: %A" result
-                    true
-            with ex ->
-                printfn "QUERY RESULT ERR: %A" ex
+let dropPostgresql (connectionString: string, databaseName: string, provider: SqlProvider) =
+    let sqlContext = SqlContext.Create(provider, connectionString)
+    let dbExistsQuery = $"SELECT 1 FROM pg_database WHERE datname='{databaseName}'"
+    printfn $"Executing db command: {dbExistsQuery}"
 
-                false
-         
-        if dbExists then
-            printfn $"Dropping DB {databaseName}"
-            let createDbCommand = $"DROP DATABASE \"{databaseName}\""
-            let createCmd = new NpgsqlCommand(createDbCommand, conn)
-            createCmd.ExecuteNonQuery() |> ignore
-            printfn "Database '%s' dropped." databaseName
-        else 
-            printfn "Database '%s' doesn't exist" databaseName
-        finally
-            if conn.State = Data.ConnectionState.Open then
-                conn.Close()
+    let dbExists =
+        try
+            match sqlContext.ExecuteQuery(dbExistsQuery) with
+            | null -> false
+            | result ->
+                printfn "QUERY RESULT: %A" result
+                true
+        with ex ->
+            printfn "QUERY RESULT ERR: %A" ex
 
-let drop (connectionString: string, databaseName: string, provider: SqlProvider) = 
+            false
+
+    if dbExists then
+        printfn $"Dropping DB {databaseName}"
+        let createDbCommand = $"DROP DATABASE \"{databaseName}\""
+        sqlContext.ExecuteNonQuery(createDbCommand) |> ignore
+        printfn "Database '%s' dropped." databaseName
+    else
+        printfn "Database '%s' doesn't exist" databaseName
+
+let drop (connectionString: string, databaseName: string, provider: SqlProvider) =
     match provider with
-    | SqlProvider.PostgreSQL ->
-        dropPostgresql(connectionString, databaseName)
-    | _ ->
-        printfn $"Sory, {provider} is not yet implemented."
+    | SqlProvider.PostgreSQL -> dropPostgresql (connectionString, databaseName, provider)
+    | _ -> printfn $"Sory, {provider} is not yet implemented."

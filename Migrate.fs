@@ -3,29 +3,20 @@ module Meg.Migrate
 open System.IO
 open Npgsql.FSharp
 open Npgsql
-open Meg.Config
+open Meg.Providers
 
 
-let runSqlScriptPostgresql (connectionString: string, filePath: string) = 
-    let sql = File.ReadAllText(filePath)
-    use connection = new NpgsqlConnection(connectionString)
-    connection.Open()
+let runSqlScript (connectionString: string, migrationFilePath: string, provider: SqlProvider) =
+    let sql = File.ReadAllText(migrationFilePath)
+    let sqlContext = Meg.Providers.SqlContext.Create(provider, connectionString)
     printfn "Running Query from Script:\n %s" sql
-    use command = new NpgsqlCommand(sql, connection)
-    let queryResult = command.ExecuteNonQuery()
-    printfn "Query Result: %i" queryResult
+    let queryResult = sqlContext.ExecuteNonQuery(sql)
+    printfn "Query Result: %A" queryResult
 
 let runMigrations (connectionString: string, directoryPath: string, provider: SqlProvider) =
     let sqlFiles = Directory.GetFiles(directoryPath)
     let sortedFiles = sqlFiles |> Array.sort
 
-    sortedFiles 
-    |> Array.filter(fun f -> System.IO.Path.GetExtension(f).ToLower() = ".sql")
-    |> Array.iter(fun f -> 
-        match provider with
-        | SqlProvider.PostgreSQL ->
-            runSqlScriptPostgresql(connectionString, f)
-        | _ ->
-            printfn $"Sorry, provider {provider} is not yet implemented."
-        ) 
-
+    sortedFiles
+    |> Array.filter (fun f -> System.IO.Path.GetExtension(f).ToLower() = ".sql")
+    |> Array.iter (fun migrationFilePath -> runSqlScript (connectionString, migrationFilePath, provider))

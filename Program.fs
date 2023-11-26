@@ -12,7 +12,7 @@ let VERSION = "0.0.3"
 type CreateArgs =
     | [<AltCommandLine("-d")>] Db_Name of db_name: string
     | [<AltCommandLine("-c")>] Connection_String of connection_string: string
-    | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
+    | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -26,7 +26,7 @@ type CreateArgs =
 and DropArgs =
     | [<AltCommandLine("-d")>] Db_Name of db_name: string
     | [<AltCommandLine("-c")>] Connection_String of connection_string: string
-    | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
+    | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -41,7 +41,7 @@ and DropArgs =
 and MigrateArgs =
     | [<AltCommandLine("-c")>] Connection_String of connection_string: string
     | [<AltCommandLine("-i")>] Migration_Directory of migration_directory: string
-    | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
+    | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -52,7 +52,7 @@ and MigrateArgs =
             | Provider _ -> "Specify the database provider."
 
 and GenMigrationArgs =
-    | [<AltCommandLine("-p")>] Provider of Meg.Config.SqlProvider
+    | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
     | [<MainCommand>] Schema_Definition of string list
 
     interface IArgParserTemplate with

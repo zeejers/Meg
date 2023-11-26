@@ -1,6 +1,6 @@
 module Meg.Generate
 
-open Meg.Config
+open Meg.Providers
 
 let genMigrations
     (
