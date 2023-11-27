@@ -1,6 +1,6 @@
 # MEG - DotNet Migration Tool (WIP)
 
-Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Currently only supports PostgreSQL but will support other providers in the future.
+Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Support for Postgresql, MSSQL, MySql, and SQLite.
 
 - `create` - Creates initial database by name.
 - `drop` - Drops a database by name.

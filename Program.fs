@@ -87,6 +87,63 @@ and MegArgs =
             | Migrate _ -> "Run migrations in the migrations directory"
             | Gen _ -> "Generate"
 
+let runProgram(parseResult: ParseResults<MegArgs>) =
+    match parseResult.GetSubCommand() with
+    | Create args ->
+        let connString =
+            args.TryGetResult(CreateArgs.Connection_String)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+
+        let dbName = args.GetResult(CreateArgs.Db_Name)
+
+        let provider =
+            args.TryGetResult(CreateArgs.Provider)
+            |> Option.defaultValue (Defaults.DB_PROVIDER)
+
+        create (connString, dbName, provider)
+    | Drop args ->
+        let connString =
+            args.TryGetResult(DropArgs.Connection_String)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+
+        let dbName = args.GetResult(DropArgs.Db_Name)
+
+        let provider =
+            args.TryGetResult(DropArgs.Provider)
+            |> Option.defaultValue (Defaults.DB_PROVIDER)
+
+        drop (connString, dbName, provider)
+    | Migrate args ->
+        let connString =
+            args.TryGetResult(MigrateArgs.Connection_String)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+
+        let provider =
+            args.TryGetResult(MigrateArgs.Provider)
+            |> Option.defaultValue (Defaults.DB_PROVIDER)
+
+        let migrationsDirectory =
+            args.TryGetResult(MigrateArgs.Migration_Directory)
+            |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
+
+        runMigrations (connString, migrationsDirectory, provider)
+    | Gen args ->
+        match args.GetSubCommand() with
+        | Migration args ->
+            printfn "Generating Schema Definition"
+
+            let provider =
+                args.TryGetResult(GenMigrationArgs.Provider)
+                |> Option.defaultValue (Defaults.DB_PROVIDER)
+
+            match args.GetResult(GenMigrationArgs.Schema_Definition) with
+            | schemaName :: tableName :: fields ->
+                printfn "Gen Migration Command: Schema: %A Table: %A definitions: %A" schemaName tableName fields
+            // genMigrations (migrationName, tableName, provider, schemaDefinitions)
+            | _ -> failwith "You must provide a schema name, table, and field definitions."
+    | _ ->
+        failwith "Invalid command provided." 
+
 
 [<EntryPoint>]
 let main argv =
@@ -94,61 +151,15 @@ let main argv =
         let parser = ArgumentParser.Create<MegArgs>(programName = "meg")
         let parseResult = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
-        match parseResult.GetSubCommand() with
-        | Version -> printfn "%s" VERSION
-        | Create args ->
-            let connString =
-                args.TryGetResult(CreateArgs.Connection_String)
-                |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
-
-            let dbName = args.GetResult(CreateArgs.Db_Name)
-
-            let provider =
-                args.TryGetResult(CreateArgs.Provider)
-                |> Option.defaultValue (Defaults.DB_PROVIDER)
-
-            create (connString, dbName, provider)
-        | Drop args ->
-            let connString =
-                args.TryGetResult(DropArgs.Connection_String)
-                |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
-
-            let dbName = args.GetResult(DropArgs.Db_Name)
-
-            let provider =
-                args.TryGetResult(DropArgs.Provider)
-                |> Option.defaultValue (Defaults.DB_PROVIDER)
-
-            drop (connString, dbName, provider)
-        | Migrate args ->
-            let connString =
-                args.TryGetResult(MigrateArgs.Connection_String)
-                |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
-
-            let provider =
-                args.TryGetResult(MigrateArgs.Provider)
-                |> Option.defaultValue (Defaults.DB_PROVIDER)
-
-            let migrationsDirectory =
-                args.TryGetResult(MigrateArgs.Migration_Directory)
-                |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
-
-            runMigrations (connString, migrationsDirectory, provider)
-        | Gen args ->
-            match args.GetSubCommand() with
-            | Migration args ->
-                printfn "Generating Schema Definition"
-
-                let provider =
-                    args.TryGetResult(GenMigrationArgs.Provider)
-                    |> Option.defaultValue (Defaults.DB_PROVIDER)
-
-                match args.GetResult(GenMigrationArgs.Schema_Definition) with
-                | schemaName :: tableName :: fields ->
-                    printfn "Gen Migration Command: Schema: %A Table: %A definitions: %A" schemaName tableName fields
-                // genMigrations (migrationName, tableName, provider, schemaDefinitions)
-                | _ -> failwith "You must provide a schema name, table, and field definitions."
-
+        match parseResult.TryGetResult(Version) with
+        | Some Version -> 
+            printfn "%s" VERSION
+            ()
+        | _ ->
+            runProgram(parseResult)
+        
+      
+             
 
         0
     with ex ->
