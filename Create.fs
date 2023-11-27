@@ -4,14 +4,14 @@ open Npgsql
 open System
 open Meg.Providers
 
-let createPostgresql (connectionString: string, databaseName: string, provider: SqlProvider) =
+let create (connectionString: string, databaseName: string, provider: Meg.Providers.SqlProvider) =
     let sqlContext = SqlContext.Create(provider, connectionString)
-    let dbExistsQuery = $"SELECT 1 FROM pg_database WHERE datname='{databaseName}'"
+    let dbExistsQuery = sqlContext.GetDatabaseExistsQuery(databaseName)
     printfn $"Executing db command: {dbExistsQuery}"
 
     let dbExists =
         try
-            match sqlContext.ExecuteQuery(dbExistsQuery) with
+            match sqlContext.ExecuteScalar(dbExistsQuery) with
             | null -> false
             | result ->
                 printfn "QUERY RESULT: %A" result
@@ -28,8 +28,3 @@ let createPostgresql (connectionString: string, databaseName: string, provider: 
         printfn "Database '%s' created." databaseName
     else
         printfn "Database '%s' already exists" databaseName
-
-let create (connectionString: string, databaseName: string, provider: Meg.Providers.SqlProvider) =
-    match provider with
-    | SqlProvider.PostgreSQL -> createPostgresql (connectionString, databaseName, provider)
-    | _ -> printfn $"Sory, {provider} is not yet implemented."

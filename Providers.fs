@@ -1,6 +1,10 @@
 module Meg.Providers
 
+open System.Data
+open System.Data.SqlClient
+open MySql.Data.MySqlClient
 open Npgsql
+open Microsoft.Data.Sqlite
 
 type SqlProvider =
     | PostgreSQL
@@ -8,83 +12,67 @@ type SqlProvider =
     | MySql
     | SQLite
 
-type SqlProviderConnection =
-    | PostgreSQL of NpgsqlConnection
-    | NotImplemented
+type SqlProviderConnection = IDbConnection
 
 type ISqlExecutionStrategy =
-    abstract member CreateConnection: unit -> SqlProviderConnection
-    abstract member ExecuteQuery: string -> obj
-    abstract member ExecuteNonQuery: string -> obj
+    abstract member ExecuteScalar: string -> obj
+    abstract member ExecuteNonQuery: string -> int
 
+type SqlExecutionStrategy(createConnection: unit -> SqlProviderConnection, provider: SqlProvider) =
+    member val SqlProvider = provider with get
 
-type PostgreSqlStrategy(connectionString: string) =
     interface ISqlExecutionStrategy with
-        member this.CreateConnection() : SqlProviderConnection =
-            try
-                SqlProviderConnection.PostgreSQL(new NpgsqlConnection(connectionString))
-            with ex ->
-                failwith $"Unable to create SQL connection: {ex.Message}"
-
-        member this.ExecuteQuery(query: string) =
-            let connection =
-                match (this :> ISqlExecutionStrategy).CreateConnection() with
-                | PostgreSQL conn -> conn
-                | _ -> failwith "Failed to execute query, unable to create connection."
-
+        member this.ExecuteScalar(query: string) =
+            use connection = createConnection()
             connection.Open()
-            use command = new NpgsqlCommand(query, connection)
-            let queryResult = command.ExecuteScalar()
+            use command = connection.CreateCommand()
+            command.CommandText <- query
+            command.ExecuteScalar()
 
-            if (connection.State = System.Data.ConnectionState.Open) then
-                connection.Close()
-
-            queryResult
-
-
-        member this.ExecuteNonQuery(query: string) =
-            let connection =
-                match (this :> ISqlExecutionStrategy).CreateConnection() with
-                | PostgreSQL conn -> conn
-                | _ -> failwith "Failed to execute query, unable to create connection."
-
+        member this.ExecuteNonQuery(commandText: string) =
+            use connection = createConnection()
             connection.Open()
-            use command = new NpgsqlCommand(query, connection)
-            let commandResult = command.ExecuteNonQuery()
+            use command = connection.CreateCommand()
+            command.CommandText <- commandText
+            command.ExecuteNonQuery()
 
-            if (connection.State = System.Data.ConnectionState.Open) then
-                connection.Close()
+let createPostgreSqlConnection(connectionString: string) () : SqlProviderConnection =
+    new Npgsql.NpgsqlConnection(connectionString) :> SqlProviderConnection
 
-            commandResult
+let createMSSqlConnection(connectionString: string) () : SqlProviderConnection =
+    new System.Data.SqlClient.SqlConnection(connectionString) :> SqlProviderConnection
 
+let createMySQLConnection(connectionString: string) () : SqlProviderConnection =
+    new MySql.Data.MySqlClient.MySqlConnection(connectionString) :> SqlProviderConnection
 
-type MSSqlStrategy(connectionString: string) =
-    interface ISqlExecutionStrategy with
-        member _.ExecuteQuery(query: string) = ()
-        member _.ExecuteNonQuery(query: string) = ()
-        member _.CreateConnection() = SqlProviderConnection.NotImplemented
+let createSQLiteConnection(connectionString: string) () : SqlProviderConnection =
+    new SqliteConnection(connectionString) :> SqlProviderConnection
 
-
-type MySqlStrategy(connectionString: string) =
-    interface ISqlExecutionStrategy with
-        member _.ExecuteQuery(query: string) = ()
-        member _.ExecuteNonQuery(query: string) = ()
-        member _.CreateConnection() = SqlProviderConnection.NotImplemented
-
-type SQLiteStrategy(connectionString: string) =
-    interface ISqlExecutionStrategy with
-        member _.ExecuteQuery(query: string) = ()
-        member _.ExecuteNonQuery(query: string) = ()
-        member _.CreateConnection() = SqlProviderConnection.NotImplemented
+// Other connection creation functions...
 
 type SqlContext(strategy: ISqlExecutionStrategy) =
-    member this.ExecuteNonQuery(sql: string) = strategy.ExecuteNonQuery(sql)
-    member this.ExecuteQuery(query: string) = strategy.ExecuteQuery(query)
-    member this.CreateConnection() = strategy.CreateConnection()
+    member this.ExecuteScalar(query: string) = strategy.ExecuteScalar(query)
+    member this.ExecuteNonQuery(command: string) = strategy.ExecuteNonQuery(command)
+    member this.GetDatabaseExistsQuery(databaseName: string) =
+        match strategy with
+        | :? SqlExecutionStrategy as pg when pg.SqlProvider = SqlProvider.PostgreSQL -> 
+            $"SELECT 1 FROM pg_database WHERE datname='{databaseName}'"
+        | :? SqlExecutionStrategy as ms when ms.SqlProvider = SqlProvider.MSSQL -> 
+            $"IF EXISTS(SELECT * FROM sys.databases WHERE name = '{databaseName}') SELECT 1 ELSE SELECT 0;"
+        | :? SqlExecutionStrategy as my when my.SqlProvider = SqlProvider.MySql -> 
+            $"SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '{databaseName}');"
+        | :? SqlExecutionStrategy as sq when sq.SqlProvider = SqlProvider.SQLite -> 
+             "SELECT 1;"
+            //  Probably can't do this.
+        | _ ->
+            failwith "Unknown provider"
 
     static member Create(provider: SqlProvider, connectionString: string) =
-        match provider with
-        | SqlProvider.PostgreSQL -> SqlContext(PostgreSqlStrategy(connectionString))
-        | SqlProvider.MSSQL -> SqlContext(MSSqlStrategy(connectionString))
-        | SqlProvider.MySql -> SqlContext(MySqlStrategy(connectionString))
-        | SqlProvider.SQLite -> SqlContext(SQLiteStrategy(connectionString))
+        let strategy = 
+            match provider with
+            | SqlProvider.PostgreSQL -> SqlExecutionStrategy(createPostgreSqlConnection(connectionString), SqlProvider.PostgreSQL)
+            | SqlProvider.MSSQL -> SqlExecutionStrategy(createMSSqlConnection(connectionString), SqlProvider.MSSQL)
+            | SqlProvider.MySql -> SqlExecutionStrategy(createMySQLConnection(connectionString), SqlProvider.MySql)
+            | SqlProvider.SQLite -> SqlExecutionStrategy(createSQLiteConnection(connectionString), SqlProvider.SQLite)
+            // Add more cases for other providers...
+        new SqlContext(strategy)
