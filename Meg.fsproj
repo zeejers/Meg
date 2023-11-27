@@ -6,7 +6,7 @@
     <RootNamespace>Meg</RootNamespace>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>meg</ToolCommandName>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/zeejers/Meg</RepositoryUrl>
@@ -15,16 +15,21 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+    <Compile Include="Providers.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="Create.fs" />
     <Compile Include="Drop.fs" />
     <Compile Include="Migrate.fs" />
+    <Compile Include="Generate.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="MySql.Data" Version="8.2.0" />
     <PackageReference Include="Npgsql.FSharp" Version="5.7.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
 
 </Project>
