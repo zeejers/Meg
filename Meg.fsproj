@@ -10,6 +10,9 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/zeejers/Meg</RepositoryUrl>
+    <Authors>Zach Sherbondy (zeejers)</Authors>
+    <Description>Meg is an open source DB migration tool with a focus on ease of use and simplicity.</Description>
+    <PackageTags>migration;migrations;mssql;mysql;sqlite;npgsql;postgresql;postgres;database;sql</PackageTags>
   </PropertyGroup>
   
 
