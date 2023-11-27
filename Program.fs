@@ -51,6 +51,7 @@ and MigrateArgs =
             | Migration_Directory _ -> "Specify the directory that contains your order-named migration .SQL files."
             | Provider _ -> "Specify the database provider."
 
+// Example: meg gen migration add_users_table Users Name:String Id:Serial:Key
 and GenMigrationArgs =
     | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
     | [<MainCommand>] Schema_Definition of string list
@@ -71,7 +72,7 @@ and GenArgs =
             | Migration _ -> "Generate a new migration providing a schema."
 
 and MegArgs =
-    | Version
+    | [<AltCommandLine("-v")>] Version
     | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<CreateArgs>
     | [<CliPrefix(CliPrefix.None)>] Drop of ParseResults<DropArgs>
     | [<CliPrefix(CliPrefix.None)>] Migrate of ParseResults<MigrateArgs>
