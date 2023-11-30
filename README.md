@@ -1,4 +1,6 @@
-# MEG - DotNet Migration Tool (WIP)
+![Meg](images/MEG250.png)
+
+# Meg - Dotnet Migration Tool
 
 Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Support for Postgresql, MSSQL, MySql, and SQLite.
 
