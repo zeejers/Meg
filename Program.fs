@@ -7,7 +7,7 @@ open Meg.Generate
 open Argu
 
 [<Literal>]
-let VERSION = "0.0.3"
+let VERSION = "0.0.4"
 
 type CreateArgs =
     | [<AltCommandLine("-d")>] Db_Name of db_name: string
@@ -73,6 +73,7 @@ and GenArgs =
 
 and MegArgs =
     | [<AltCommandLine("-v")>] Version
+    | [<CliPrefix(CliPrefix.None)>] Env
     | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<CreateArgs>
     | [<CliPrefix(CliPrefix.None)>] Drop of ParseResults<DropArgs>
     | [<CliPrefix(CliPrefix.None)>] Migrate of ParseResults<MigrateArgs>
@@ -82,17 +83,18 @@ and MegArgs =
         member this.Usage =
             match this with
             | Version -> "Print the version."
+            | Env -> "Print the meg environment."
             | Create _ -> "Create the initial database."
             | Drop _ -> "Drop the database."
             | Migrate _ -> "Run migrations in the migrations directory"
             | Gen _ -> "Generate"
 
-let runProgram(parseResult: ParseResults<MegArgs>) =
+let runProgram (parseResult: ParseResults<MegArgs>) =
     match parseResult.GetSubCommand() with
     | Create args ->
         let connString =
             args.TryGetResult(CreateArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_INITIAL_CONNECTION_STRING)
 
         let dbName = args.GetResult(CreateArgs.Db_Name)
 
@@ -104,7 +106,7 @@ let runProgram(parseResult: ParseResults<MegArgs>) =
     | Drop args ->
         let connString =
             args.TryGetResult(DropArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_INITIAL_CONNECTION_STRING)
 
         let dbName = args.GetResult(DropArgs.Db_Name)
 
@@ -116,7 +118,7 @@ let runProgram(parseResult: ParseResults<MegArgs>) =
     | Migrate args ->
         let connString =
             args.TryGetResult(MigrateArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_MIGRATION_CONNECTION_STRING)
 
         let provider =
             args.TryGetResult(MigrateArgs.Provider)
@@ -141,8 +143,7 @@ let runProgram(parseResult: ParseResults<MegArgs>) =
                 printfn "Gen Migration Command: Schema: %A Table: %A definitions: %A" schemaName tableName fields
             // genMigrations (migrationName, tableName, provider, schemaDefinitions)
             | _ -> failwith "You must provide a schema name, table, and field definitions."
-    | _ ->
-        failwith "Invalid command provided." 
+    | _ -> failwith "Invalid command provided."
 
 
 [<EntryPoint>]
@@ -151,15 +152,21 @@ let main argv =
         let parser = ArgumentParser.Create<MegArgs>(programName = "meg")
         let parseResult = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
-        match parseResult.TryGetResult(Version) with
-        | Some Version -> 
+        match parseResult.GetAllResults() with
+        | [ Version ] ->
             printfn "%s" VERSION
             ()
-        | _ ->
-            runProgram(parseResult)
-        
-      
-             
+        | [ Env ] ->
+            printfn
+                "DB_INITIAL_CONNECTION_STRING: %s\nDB_MIGRATION_CONNECTION_STRING: %s\nDB_PROVIDER: %s\nMIGRATION_DIRECTORY: %s"
+                Defaults.DB_INITIAL_CONNECTION_STRING
+                Defaults.DB_MIGRATION_CONNECTION_STRING
+                (Defaults.DB_PROVIDER |> string)
+                Defaults.MIGRATION_DIRECTORY
+        | _ -> runProgram (parseResult)
+
+
+
 
         0
     with ex ->
