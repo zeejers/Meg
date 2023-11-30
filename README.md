@@ -91,7 +91,7 @@ meg env # utility command to print your meg env
 # > MIGRATION_DIRECTORY: Migrations
 ```
 
-# Parameters
+# Usage
 
 ## Create
 
