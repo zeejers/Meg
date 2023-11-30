@@ -1,4 +1,4 @@
-![Meg](images/MEG250.png)
+![Meg](https://raw.githubusercontent.com/zeejers/Meg/master/images/MEG250.png)
 
 # Meg - Dotnet Migration Tool
 
