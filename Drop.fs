@@ -5,7 +5,6 @@ open System
 
 open Meg.Providers
 
-
 let drop (connectionString: string, databaseName: string, provider: SqlProvider) =
     let sqlContext = SqlContext.Create(provider, connectionString)
     let dbExistsQuery = sqlContext.GetDatabaseExistsQuery(databaseName)
