@@ -133,6 +133,10 @@ OPTIONS:
 
 ## Migrate
 
+Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending.
+
+The schema_migrations table will be automatically created the first time you run `meg migrate` successfully.
+
 ```bash
 $USAGE: meg migrate [--help] [--connection-string <connection string>] [--migration-directory <migration directory>]
                    [--provider <postgresql|mssql|mysql|sqlite>]
