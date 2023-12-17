@@ -6,7 +6,7 @@
     <RootNamespace>Meg</RootNamespace>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>meg</ToolCommandName>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/zeejers/Meg</RepositoryUrl>
@@ -30,6 +30,8 @@
 
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Include="Dapper" Version="2.1.24" />
+    <PackageReference Include="Dapper.FSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
     <PackageReference Include="MySql.Data" Version="8.2.0" />
     <PackageReference Include="Npgsql.FSharp" Version="5.7.0" />
