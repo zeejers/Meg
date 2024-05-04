@@ -70,7 +70,7 @@ meg create -d my_new_db
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg migrate
+meg migrate -d my_new_db
 
 # > Running Query from Script:
 # > CREATE TABLE TODOS (
@@ -153,8 +153,6 @@ OPTIONS:
 Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending.
 
 The schema_migrations table will be automatically created the first time you run `meg migrate` successfully.
-
-Note that the
 
 ```bash
 $USAGE: meg migrate [--help] [--db-name <db name>] [--connection-string <connection string>] [--migration-directory <migration directory>]
