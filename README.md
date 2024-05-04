@@ -32,7 +32,7 @@ meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg migrate -c "Server=localhost;User Id=postgres;Password=postgres;Database=my_new_db;Port=5432;"
+meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 # > Running Query from Script:
 # > CREATE TABLE TODOS (
@@ -48,8 +48,7 @@ meg migrate -c "Server=localhost;User Id=postgres;Password=postgres;Database=my_
 You can supplement command line usage with some ENV vars in your project to reduce how often you have to enter params in the command line. Having these set will allow them to be used as defaults.
 
 ```bash
-DB_INITIAL_CONNECTION_STRING # The connection string used by 'create' and 'drop' commands.
-DB_MIGRATION_CONNECTION_STRING # The connection string for your created DB. Different from initial connection string because the admin db / user / password is almost definitely not the same as the app specific db / user / password
+DB_CONNECTION_STRING # The connection string used by 'create', 'drop' and 'migrate' commands.
 DB_PROVIDER # postgres | mssql | mysql | sqlite
 MIGRATION_DIRECTORY # directory of your migrations, defaults to "./Migrations"
 ```
@@ -57,8 +56,7 @@ MIGRATION_DIRECTORY # directory of your migrations, defaults to "./Migrations"
 Example using direnv .envrc
 
 ```bash
-export DB_INITIAL_CONNECTION_STRING="Host=localhost;Database=postgres;Username=postgres;Password=postgres;"
-export DB_MIGRATION_CONNECTION_STRING="Host=localhost;Database=my_new_db;User Id=postgres;Password=postgres;"
+export DB_CONNECTION_STRING="Host=localhost;Database=postgres;Username=postgres;Password=postgres;"
 export DB_PROVIDER=postgres # postgres | mssql | mysql | sqlite
 export MIGRATION_DIRECTORY=Migrations # directory of your migrations, defaults to "./Migrations"
 ```
@@ -87,8 +85,7 @@ meg migrate
 
 ```bash
 meg env # utility command to print your meg env
-# > DB_INITIAL_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
-# > DB_MIGRATION_CONNECTION_STRING: Server=localhost;Port=54322;Database=my_new_db;User Id=postgres;Password=postgres;
+# > DB_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
 # > DB_PROVIDER: PostgreSQL
 # > MIGRATION_DIRECTORY: Migrations
 ```
@@ -131,18 +128,41 @@ OPTIONS:
     --help                display this list of options.
 ```
 
+## Reset
+
+Drop then create the specified DB
+
+```bash
+$USAGE: meg reset [--help] [--db-name <db name>] [--connection-string <connection string>]
+[--provider <postgresql|mssql|mysql|sqlite>]
+
+OPTIONS:
+
+    --db-name, -d <db name>
+                          Specify the name of the database to reset.
+    --connection-string, -c <connection string>
+                          Specify the database connection string for the Admin database. Must be able to create DBs
+                          with the permissions of the user.
+    --provider, -p <postgresql|mssql|mysql|sqlite>
+                          Specify the database provider.
+    --help                display this list of options.
+```
+
 ## Migrate
 
 Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending.
 
 The schema_migrations table will be automatically created the first time you run `meg migrate` successfully.
 
+Note that the
+
 ```bash
-$USAGE: meg migrate [--help] [--connection-string <connection string>] [--migration-directory <migration directory>]
+$USAGE: meg migrate [--help] [--db-name <db name>] [--connection-string <connection string>] [--migration-directory <migration directory>]
                    [--provider <postgresql|mssql|mysql|sqlite>]
 
 OPTIONS:
-
+    --db-name, -d <db name>
+                          Specify the name of the database to run migrations for.
     --connection-string, -c <connection string>
                           Specify the database connection string for the database. Must be able to create and update
                           tables  with the permissions of the user.
