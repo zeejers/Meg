@@ -41,6 +41,7 @@ and DropArgs =
 and MigrateArgs =
     | [<AltCommandLine("-c")>] Connection_String of connection_string: string
     | [<AltCommandLine("-i")>] Migration_Directory of migration_directory: string
+    | [<AltCommandLine("-d")>] Db_Name of db_name: string
     | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
 
     interface IArgParserTemplate with
@@ -50,6 +51,7 @@ and MigrateArgs =
                 "Specify the database connection string for the database. Must be able to create and update tables  with the permissions of the user."
             | Migration_Directory _ -> "Specify the directory that contains your order-named migration .SQL files."
             | Provider _ -> "Specify the database provider."
+            | Db_Name _ -> "Sepcify the database name."
 
 // Example: meg gen migration add_users_table Users Name:String Id:Serial:Key
 and GenMigrationArgs =
@@ -94,7 +96,7 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
     | Create args ->
         let connString =
             args.TryGetResult(CreateArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_INITIAL_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
         let dbName = args.GetResult(CreateArgs.Db_Name)
 
@@ -106,7 +108,7 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
     | Drop args ->
         let connString =
             args.TryGetResult(DropArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_INITIAL_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
         let dbName = args.GetResult(DropArgs.Db_Name)
 
@@ -118,7 +120,7 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
     | Migrate args ->
         let connString =
             args.TryGetResult(MigrateArgs.Connection_String)
-            |> Option.defaultValue (Defaults.DB_MIGRATION_CONNECTION_STRING)
+            |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
         let provider =
             args.TryGetResult(MigrateArgs.Provider)
@@ -128,7 +130,9 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
             args.TryGetResult(MigrateArgs.Migration_Directory)
             |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
 
-        runMigrations (connString, migrationsDirectory, provider)
+        let dbName = args.GetResult(MigrateArgs.Db_Name)
+
+        runMigrations (connString, migrationsDirectory, provider, dbName)
     | Gen args ->
         match args.GetSubCommand() with
         | Migration args ->
@@ -158,9 +162,8 @@ let main argv =
             ()
         | [ Env ] ->
             printfn
-                "DB_INITIAL_CONNECTION_STRING: %s\nDB_MIGRATION_CONNECTION_STRING: %s\nDB_PROVIDER: %s\nMIGRATION_DIRECTORY: %s"
-                Defaults.DB_INITIAL_CONNECTION_STRING
-                Defaults.DB_MIGRATION_CONNECTION_STRING
+                "DB_CONNECTION_STRING: %s:\nDB_PROVIDER: %s\nMIGRATION_DIRECTORY: %s"
+                Defaults.DB_CONNECTION_STRING
                 (Defaults.DB_PROVIDER |> string)
                 Defaults.MIGRATION_DIRECTORY
         | _ -> runProgram (parseResult)

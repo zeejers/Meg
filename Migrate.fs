@@ -4,6 +4,7 @@ open System.IO
 open Npgsql.FSharp
 open Npgsql
 open Meg.Providers
+open System.Text.RegularExpressions
 
 let runSqlScript (sqlContext: SqlContext, migrationFilePath: string) =
     let sql = File.ReadAllText(migrationFilePath)
@@ -26,9 +27,15 @@ let runSqlScript (sqlContext: SqlContext, migrationFilePath: string) =
 
     ()
 
-let runMigrations (connectionString: string, directoryPath: string, provider: SqlProvider) =
+let getTableConnectionString (connectionString: string, dbName: string) =
+    // "Server=localhost; Port=54322; Database=postgres; User Id=postgres; Password=postgres;"
+    let regex = new Regex("(Database=)[^;]+", RegexOptions.IgnoreCase)
+    regex.Replace(connectionString, $"$1{dbName}")
+
+let runMigrations (connectionString: string, directoryPath: string, provider: SqlProvider, dbName: string) =
     let sqlFiles = Directory.GetFiles(directoryPath)
-    let sqlContext = Meg.Providers.SqlContext.Create(provider, connectionString)
+    let connString = getTableConnectionString (connectionString, dbName)
+    let sqlContext = Meg.Providers.SqlContext.Create(provider, connString)
 
     let createMigrationsTableCmd = sqlContext.CreateMigrationsTableCommand()
 
