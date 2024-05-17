@@ -67,6 +67,7 @@ and MigrateArgs =
 // Example: meg gen migration add_users_table Users Name:String Id:Serial:Key
 and GenMigrationArgs =
     | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
+    | [<AltCommandLine("-o")>] OutputDir of string
     | [<MainCommand>] Schema_Definition of string list
 
     interface IArgParserTemplate with
@@ -74,7 +75,9 @@ and GenMigrationArgs =
             match this with
             | Provider _ -> "Specify the database provider."
             | Schema_Definition _ ->
-                "Specify the schema definition of the migration. Format MigrationName TableName Id:Serial:Pk Name:String Description:Text"
+                "Specify the schema definition of the migration. Format MigrationName TableName Id:Id Name:String Description:"
+            | OutputDir _ ->
+                "The output directory to write migrations to. When not specified, the resulting SQL is written to env var MIGRATION_DIRECTORY value, defaults to 'Migrations'"
 
 and GenArgs =
     | [<CliPrefix(CliPrefix.None)>] Migration of ParseResults<GenMigrationArgs>
@@ -162,17 +165,19 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
     | Gen args ->
         match args.GetSubCommand() with
         | Migration args ->
-            printfn "Generating Schema Definition"
 
             let provider =
                 args.TryGetResult(GenMigrationArgs.Provider)
                 |> Option.defaultValue (Defaults.DB_PROVIDER)
 
+            let outputDir =
+                args.TryGetResult(GenMigrationArgs.OutputDir)
+                |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
+
             match args.GetResult(GenMigrationArgs.Schema_Definition) with
-            | schemaName :: tableName :: fields ->
-                printfn "Gen Migration Command: Schema: %A Table: %A definitions: %A" schemaName tableName fields
+            | schemaName :: tableName :: fields -> genMigrations schemaName tableName provider fields outputDir
             // genMigrations (migrationName, tableName, provider, schemaDefinitions)
-            | _ -> failwith "You must provide a schema name, table, and field definitions."
+            | _ -> failwith "You must provide a migration name, table name, and field definitions."
     | _ -> failwith "Invalid command provided."
 
 
