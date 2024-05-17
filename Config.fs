@@ -1,8 +1,6 @@
 module Meg.Config
 
 open Meg.Providers
-open System
-
 
 type MegConfig =
     { DB_CONNECTION_STRING: string

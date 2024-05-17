@@ -1,7 +1,5 @@
 module Meg.Create
 
-open Npgsql
-open System
 open Meg.Providers
 
 let create (connectionString: string, databaseName: string, provider: Meg.Providers.SqlProvider) =

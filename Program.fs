@@ -188,7 +188,7 @@ let main argv =
             ()
         | [ Env ] ->
             printfn
-                "DB_CONNECTION_STRING: %s:\nDB_PROVIDER: %s\nMIGRATION_DIRECTORY: %s"
+                "DB_CONNECTION_STRING=\"%s\"\nDB_PROVIDER=%s\nMIGRATION_DIRECTORY=%s"
                 Defaults.DB_CONNECTION_STRING
                 (Defaults.DB_PROVIDER |> string)
                 Defaults.MIGRATION_DIRECTORY
