@@ -66,6 +66,26 @@ type SchemaFieldTypeMapping =
       PostgresDbType: PostgresDbType
       MigrationValue: string }
 
+let schemaDefintionCliUsageDescriptions =
+    """
+Id              an integer autoincrementing primary key.
+Guid            a uuid (string) primary key that defaults to uuid based on the db provider. Sane default for dotnet guids.
+Integer
+Float
+Numeric
+Boolean
+String          Maps to Varchar(255).
+Text            Variable length no limit.  
+Binary
+Array
+Record
+Date
+Time
+datetime        Convenience for automatic no timezone timestamp with a default value of current dt.
+datetimetz      Timestamp including timezone information
+
+"""
+
 let getSchemaFieldMapping (fieldType: SchemaFieldType) : SchemaFieldTypeMapping =
     match fieldType with
     | SchemaId ->

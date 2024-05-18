@@ -75,7 +75,7 @@ and GenMigrationArgs =
             match this with
             | Provider _ -> "Specify the database provider."
             | Schema_Definition _ ->
-                "Specify the schema definition of the migration. Format MigrationName TableName Id:Id Name:String Description:"
+                "Specify the schema definition of the migration. Format MigrationName TableName Id:Id Name:String Description:Text"
             | OutputDir _ ->
                 "The output directory to write migrations to. When not specified, the resulting SQL is written to env var MIGRATION_DIRECTORY value, defaults to 'Migrations'"
 
