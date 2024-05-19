@@ -390,6 +390,14 @@ Date            Maps to {helpDate.MigrationPrimitive}.
 Time            Maps to {helpTime.MigrationPrimitive}.
 DateTime        Timestamp without TZ. Maps to {helpDateTime.MigrationPrimitive}.
 DateTimeTz      Timestamp with TZ. Maps to {helpDateTimetz.MigrationPrimitive}.
+
+-- References --
+You can include references using
+[ColumnName]:[ColumnType]:References:[ReferenceTableName]:[ReferenceColumnName]
+For example
+-----------
+user_id:int:references:users:id
+-----------
 """
 
 
@@ -404,12 +412,12 @@ let extractSchemaInput (input: string) =
           ColumnType = columnType
           ColumnProperties = None
           References = None }
-    | [ columnName; columnType; "references"; referenceField ] ->
+    | [ columnName; columnType; references; referenceField ] when references.ToUpper() = "REFERENCES" ->
         { ColumnName = columnName
           ColumnType = columnType
           ColumnProperties = None
           References = Some referenceField }
-    | [ columnName; columnType; "references"; referenceTable; referenceField ] ->
+    | [ columnName; columnType; references; referenceTable; referenceField ] when references.ToUpper() = "REFERENCES" ->
         { ColumnName = columnName
           ColumnType = columnType
           ColumnProperties = None
