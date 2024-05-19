@@ -6,8 +6,9 @@ Meg is an extremely simple migration command line tool that is inspired by conve
 
 - `create` - Creates initial database by name.
 - `drop` - Drops a database by name.
+- `reset` - Drops and creates a database by name.
 - `migrate` - Runs migrations in the specified migration folder. Defaults to folder "Migrations". Migrations are just SQL scripts.
-- `gen` - Generates a migration via DSL. TODO.
+- `gen` - Generates a migration via meg DSL.
 - `env` - Print the meg environment to see what your default database connection strings, migration folder, and db provider are.
 
 ## Install
@@ -150,7 +151,7 @@ OPTIONS:
 
 ## Migrate
 
-Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending.
+Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending. Migrations are SQL scripts that are read from your configured migration directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`.
 
 The schema_migrations table will be automatically created the first time you run `meg migrate` successfully.
 
@@ -169,4 +170,72 @@ OPTIONS:
     --provider, -p <postgresql|mssql|mysql|sqlite>
                           Specify the database provider.
     --help                display this list of options.
+```
+
+## Gen Migrations
+
+You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`.
+
+Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings. 
+
+Example command with break down: <br />
+`meg gen migration AddPostsTable posts Id:Guid Name:String UserId:Guid:References:Users:Id`
+
+`meg gen migration` - command base <br />
+`AddPostsTable` - migration file name <br />
+`posts` - table name <br />
+`Id:Guid Name:String UserId:Guid:References:Users:Id` - schema definition <br />
+
+```bash
+$USAGE: meg gen migration [--help] [--provider <postgresql|mssql|mysql|sqlite>]
+                         [--migration-directory <migration directory>]
+                         [<string>...]
+
+SCHEMA DEFINITION:
+
+    <string>...           Specify the schema definition of the migration in
+                          this format:
+                          -----------
+                          meg gen migration AddUsersTable users Id:Id
+                          Name:String Description:Text
+                          -----------
+                          List of all schema types for PostgreSQL (see your
+                          provider by setting DB_PROVIDER) :
+                          Id              an integer autoincrementing primary
+                          key. Maps to INTEGER.
+                          Guid            Sane default (uuid PK) for dotnet
+                          guids. Maps to UUID.
+                          Integer         Maps to INTEGER.
+                          Float           Maps to FLOAT.
+                          Numeric         Maps to NUMERIC.
+                          Boolean         Maps to BOOLEAN.
+                          String          Maps to VARCHAR(255).
+                          Text            Maps to TEXT.
+                          Binary          Maps to BYTEA.
+                          Array           Maps to JSONB.
+                          Record          Maps to JSONB.
+                          Date            Maps to DATE.
+                          Time            Maps to TIME.
+                          DateTime        Timestamp without TZ. Maps to
+                          TIMESTAMP.
+                          DateTimeTz      Timestamp with TZ. Maps to TIMESTAMP.
+                          -- References --
+                          You can include references using
+                          [ColumnName]:[ColumnType]:References:[ReferenceTableNa
+                          me]:[ReferenceColumnName]
+                          For example
+                          -----------
+                          user_id:int:references:users:id
+                          -----------
+
+OPTIONS:
+
+    --provider, -p <postgresql|mssql|mysql|sqlite>
+                          Specify the database provider.
+    --migration-directory, -o <migration directory>
+                          The output directory to write migrations to. When not
+                          specified, the resulting SQL is written to env var
+                          MIGRATION_DIRECTORY value, defaults to 'Migrations'
+    --help                display this list of options.
+
 ```

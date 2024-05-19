@@ -67,7 +67,7 @@ and MigrateArgs =
 // Example: meg gen migration add_users_table Users Name:String Id:Serial:Key
 and GenMigrationArgs =
     | [<AltCommandLine("-p")>] Provider of Meg.Providers.SqlProvider
-    | [<AltCommandLine("-o")>] OutputDir of string
+    | [<AltCommandLine("-o")>] Migration_Directory of migration_directory: string
     | [<MainCommand>] Schema_Definition of string list
 
     interface IArgParserTemplate with
@@ -75,8 +75,14 @@ and GenMigrationArgs =
             match this with
             | Provider _ -> "Specify the database provider."
             | Schema_Definition _ ->
-                "Specify the schema definition of the migration. Format MigrationName TableName Id:Id Name:String Description:"
-            | OutputDir _ ->
+                // let p = System.Environment.GetEnvironmentVariable("DB_PROVIDER")
+
+                let provider = Defaults.DB_PROVIDER
+
+                let schemaHelp = schemaDefintionCliUsageDescriptions (provider)
+
+                $"Specify the schema definition of the migration in this format:\n-----------\nmeg gen migration AddUsersTable users Id:Id Name:String Description:Text\n-----------\nList of all schema types for {provider} (see your provider by setting DB_PROVIDER) :\n{schemaHelp}"
+            | Migration_Directory _ ->
                 "The output directory to write migrations to. When not specified, the resulting SQL is written to env var MIGRATION_DIRECTORY value, defaults to 'Migrations'"
 
 and GenArgs =
@@ -171,7 +177,7 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
                 |> Option.defaultValue (Defaults.DB_PROVIDER)
 
             let outputDir =
-                args.TryGetResult(GenMigrationArgs.OutputDir)
+                args.TryGetResult(GenMigrationArgs.Migration_Directory)
                 |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
 
             match args.GetResult(GenMigrationArgs.Schema_Definition) with
