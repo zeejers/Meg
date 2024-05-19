@@ -356,6 +356,13 @@ let parseSchemaFieldType (inputType: string) : option<SchemaFieldType> =
     | "datetimetz" -> Some SchemaDateTimeTz
     | _ -> None
 
+let quoteIdentifier (identifier: string) (provider: SqlProvider) =
+    match provider with
+    | SqlProvider.MSSQL -> $"[{identifier}]"
+    | SqlProvider.MySql -> $"`{identifier}`"
+    | _ ->
+        let quote = "\""
+        $"{quote}{identifier}{quote}"
 
 let schemaDefintionCliUsageDescriptions (provider: SqlProvider) =
     let helpId = getSchemaFieldMapping SchemaId provider None None
@@ -408,7 +415,7 @@ For example
 """
 
 
-let extractSchemaInput (input: string) =
+let extractSchemaInput (input: string) (provider: SqlProvider) =
     match input.Split(":") |> Array.toList with
     | [] ->
         failwithf
@@ -428,7 +435,7 @@ let extractSchemaInput (input: string) =
         { ColumnName = columnName
           ColumnType = columnType
           ColumnProperties = None
-          References = Some $"{referenceTable}({referenceField})" }
+          References = Some $"{referenceTable}({quoteIdentifier input provider})" }
     | columnName :: columnType :: additionalProperies ->
         { ColumnName = columnName
           ColumnType = columnType
@@ -446,13 +453,14 @@ let mkdirSafe dirPath =
         Directory.CreateDirectory(dirPath) |> ignore
         ()
 
-let genColumnSqlLine (fieldName: string) (schemaMapping: SchemaFieldTypeMapping) =
-    let quote = "\""
-    $"\t{quote}{fieldName}{quote} {schemaMapping.MigrationValue}"
+let genColumnSqlLine (columnName: string) (schemaMapping: SchemaFieldTypeMapping) (provider: SqlProvider) =
+    let quotedColumnName = quoteIdentifier columnName provider
+    $"\t{quotedColumnName} {schemaMapping.MigrationValue}"
 
 
-let genForeignKeySqlLine schemaInput =
-    sprintf "\tFOREIGN KEY (\"%s\") REFERENCES %s" schemaInput.ColumnName schemaInput.References.Value
+let genForeignKeySqlLine (schemaInput: ExtractedSchemaInput) (provider: SqlProvider) =
+    let quotedColumnName = quoteIdentifier schemaInput.ColumnName provider
+    sprintf "\tFOREIGN KEY (%s) REFERENCES %s" quotedColumnName schemaInput.References.Value
 
 let genMigrations
     (migrationName: string)
@@ -462,7 +470,8 @@ let genMigrations
     (outputDir: string)
     =
 
-    let extractedSchemaInputs = schemaDefinitions |> List.map extractSchemaInput
+    let extractedSchemaInputs =
+        schemaDefinitions |> List.map (fun inp -> extractSchemaInput inp provider)
 
     let sql =
         extractedSchemaInputs
@@ -476,7 +485,7 @@ let genMigrations
                         (Some extractedSchemaInput.ColumnName)
                         extractedSchemaInput.ColumnProperties
 
-                genColumnSqlLine extractedSchemaInput.ColumnName schemaFieldTypeMapping
+                genColumnSqlLine extractedSchemaInput.ColumnName schemaFieldTypeMapping provider
             | None ->
                 failwithf
                     "Unable to parse input schema definition for %s:%s"
@@ -487,7 +496,7 @@ let genMigrations
     let referencesSql =
         extractedSchemaInputs
         |> List.filter (fun schemaInput -> schemaInput.References.IsSome)
-        |> List.map genForeignKeySqlLine
+        |> List.map (fun inp -> genForeignKeySqlLine inp provider)
         |> String.concat (",\n")
 
     let sql =
