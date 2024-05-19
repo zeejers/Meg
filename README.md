@@ -33,7 +33,7 @@ meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg gen migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:String:References:Subscriptions:Id
+meg gen migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
 
 #> Wrote migration Migrations/1716128697_AddUsersTable.SQL
 
