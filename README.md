@@ -227,6 +227,15 @@ SCHEMA DEFINITION:
                           -----------
                           user_id:int:references:users:id
                           -----------
+                          -- Additional Properties --
+                          You can include additional properties to a non
+                          reference field using a similar syntax
+                          [ColumnName]:[ColumnType]:[ADDITIONAL PROPERTIES]
+                          For example
+                          -----------
+                          "username:string:unique not null"
+                          -----------
+
 
 OPTIONS:
 
