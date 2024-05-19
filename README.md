@@ -174,7 +174,7 @@ OPTIONS:
 
 ## Gen Migrations
 
-You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`.
+You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`. You can modify the output SQL after its generated if desired. All SQL is generated assuming you are CREATING a new table.
 
 Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings. 
 
