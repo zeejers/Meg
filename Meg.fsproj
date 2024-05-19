@@ -6,7 +6,7 @@
     <RootNamespace>Meg</RootNamespace>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>meg</ToolCommandName>
-    <Version>2.1.1</Version>
+    <Version>2.2.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/zeejers/Meg</RepositoryUrl>
