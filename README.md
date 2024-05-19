@@ -178,13 +178,13 @@ You can generate migrations using a convenient, limited DSL. The output is a SQL
 
 Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings. 
 
-Example command with break down: <br />
+Example command with break down:
 `meg gen migration AddPostsTable posts Id:Guid Name:String UserId:Guid:References:Users:Id`
 
-`meg gen migration` - command base <br />
-`AddPostsTable` - migration file name <br />
-`posts` - table name <br />
-`Id:Guid Name:String UserId:Guid:References:Users:Id` - schema definition <br />
+`meg gen migration` - command base
+`AddPostsTable` - migration file name
+`posts` - table name
+`Id:Guid Name:String UserId:Guid:References:Users:Id` - schema definition
 
 ```bash
 $USAGE: meg gen migration [--help] [--provider <postgresql|mssql|mysql|sqlite>]
