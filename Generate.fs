@@ -73,6 +73,14 @@ type ExtractedSchemaInput =
       ColumnProperties: string option
       References: string option }
 
+let quoteIdentifier (identifier: string) (provider: SqlProvider) =
+    match provider with
+    | SqlProvider.MSSQL -> $"[{identifier}]"
+    | SqlProvider.MySql -> $"`{identifier}`"
+    | _ ->
+        let quote = "\""
+        $"{quote}{identifier}{quote}"
+
 let getSchemaMigrationValue (fieldType: SchemaFieldType) (provider: SqlProvider) (columnName: string) =
     match provider with
     | SqlProvider.PostgreSQL ->
@@ -123,8 +131,8 @@ let getSchemaMigrationValue (fieldType: SchemaFieldType) (provider: SqlProvider)
         | SchemaString -> ("NVARCHAR(255)", "NVARCHAR(255)")
         | SchemaText -> ("NTEXT", "NTEXT")
         | SchemaBinary -> ("VARBINARY(MAX)", "VARBINARY(MAX)")
-        | SchemaArray -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON([{columnName}])>0)")
-        | SchemaRecord -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON([{columnName}])>0)")
+        | SchemaArray -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON({columnName})>0)")
+        | SchemaRecord -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON({columnName})>0)")
         | SchemaDate -> ("DATE", "DATE")
         | SchemaTime -> ("TIME", "TIME")
         | SchemaUtcDateTime -> ("DATETIME2", "DATETIME2 DEFAULT GETUTCDATE()")
@@ -158,7 +166,7 @@ let getSchemaFieldMapping
     : SchemaFieldTypeMapping =
     let columnName =
         match columnName with
-        | Some col -> col
+        | Some col -> quoteIdentifier col provider
         | None -> "YOUR_COLUMN_NAME"
 
     let additionalProperties =
@@ -355,14 +363,6 @@ let parseSchemaFieldType (inputType: string) : option<SchemaFieldType> =
     | "utcdatetime" -> Some SchemaUtcDateTime
     | "datetimetz" -> Some SchemaDateTimeTz
     | _ -> None
-
-let quoteIdentifier (identifier: string) (provider: SqlProvider) =
-    match provider with
-    | SqlProvider.MSSQL -> $"[{identifier}]"
-    | SqlProvider.MySql -> $"`{identifier}`"
-    | _ ->
-        let quote = "\""
-        $"{quote}{identifier}{quote}"
 
 let schemaDefintionCliUsageDescriptions (provider: SqlProvider) =
     let helpId = getSchemaFieldMapping SchemaId provider None None
