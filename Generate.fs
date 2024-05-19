@@ -435,7 +435,7 @@ let extractSchemaInput (input: string) (provider: SqlProvider) =
         { ColumnName = columnName
           ColumnType = columnType
           ColumnProperties = None
-          References = Some $"{referenceTable}({quoteIdentifier input provider})" }
+          References = Some $"{quoteIdentifier referenceTable provider}({quoteIdentifier referenceField provider})" }
     | columnName :: columnType :: additionalProperies ->
         { ColumnName = columnName
           ColumnType = columnType
@@ -458,7 +458,7 @@ let genColumnSqlLine (columnName: string) (schemaMapping: SchemaFieldTypeMapping
     $"\t{quotedColumnName} {schemaMapping.MigrationValue}"
 
 
-let genForeignKeySqlLine (schemaInput: ExtractedSchemaInput) (provider: SqlProvider) =
+let genReferenceSqlLine (schemaInput: ExtractedSchemaInput) (provider: SqlProvider) =
     let quotedColumnName = quoteIdentifier schemaInput.ColumnName provider
     sprintf "\tFOREIGN KEY (%s) REFERENCES %s" quotedColumnName schemaInput.References.Value
 
@@ -496,7 +496,7 @@ let genMigrations
     let referencesSql =
         extractedSchemaInputs
         |> List.filter (fun schemaInput -> schemaInput.References.IsSome)
-        |> List.map (fun inp -> genForeignKeySqlLine inp provider)
+        |> List.map (fun inp -> genReferenceSqlLine inp provider)
         |> String.concat (",\n")
 
     let sql =
@@ -504,6 +504,7 @@ let genMigrations
         | "" -> sql
         | referencesSql -> $"{sql},\n{referencesSql}"
 
+    let tableName = quoteIdentifier tableName provider
     let sql = $"CREATE TABLE {tableName} (\n{sql}\n);"
     let unixEpochCalc = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
     mkdirSafe outputDir

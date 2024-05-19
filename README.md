@@ -33,7 +33,7 @@ meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg gen migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
+meg gen migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:String:References:Subscriptions:Id
 
 #> Wrote migration Migrations/1716128697_AddUsersTable.SQL
 
@@ -41,11 +41,13 @@ meg gen migration AddUsersTable users Id:Guid Name:String Email:String Subscript
 meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 # > Running Query from Script:
-# > CREATE TABLE TODOS (
-# >    Id SERIAL PRIMARY KEY,
-# >    Name varchar(255),
-# >    Text TEXT
-# > )
+CREATE TABLE "users" (
+	"Id" UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+	"Name" VARCHAR(255),
+	"Email" VARCHAR(255),
+	"SubscriptionId" VARCHAR(255),
+	FOREIGN KEY ("SubscriptionId") REFERENCES Subscriptions("Id")
+);
 # > Query Result: -1
 ```
 
@@ -190,6 +192,9 @@ Example command with break down:
 `AddPostsTable` - migration file name
 `posts` - table name
 `Id:Guid Name:String UserId:Guid:References:Users:Id` - schema definition
+
+> ⚠️ **WARNING:** If you are using Guid field with PostgreSQL, make sure you've installed the required extension to support generating uuids using `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`.
+
 
 ```bash
 $USAGE: meg gen migration [--help] [--provider <postgresql|mssql|mysql|sqlite>]
