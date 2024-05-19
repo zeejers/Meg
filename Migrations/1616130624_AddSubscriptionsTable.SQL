@@ -1,4 +1,4 @@
-CREATE TABLE "subscriptions" (
-	"id" VARCHAR(255),
-	"name" VARCHAR(255)
+CREATE TABLE "Subscriptions" (
+	"Id" UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+	"Name" VARCHAR(255)
 );

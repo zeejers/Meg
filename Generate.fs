@@ -453,8 +453,12 @@ let mkdirSafe dirPath =
         Directory.CreateDirectory(dirPath) |> ignore
         ()
 
-let genColumnSqlLine (columnName: string) (schemaMapping: SchemaFieldTypeMapping) (provider: SqlProvider) =
-    let quotedColumnName = quoteIdentifier columnName provider
+let genColumnSqlLine
+    (extractedSchemaInput: ExtractedSchemaInput)
+    (schemaMapping: SchemaFieldTypeMapping)
+    (provider: SqlProvider)
+    =
+    let quotedColumnName = quoteIdentifier extractedSchemaInput.ColumnName provider
     $"\t{quotedColumnName} {schemaMapping.MigrationValue}"
 
 
@@ -485,7 +489,7 @@ let genMigrations
                         (Some extractedSchemaInput.ColumnName)
                         extractedSchemaInput.ColumnProperties
 
-                genColumnSqlLine extractedSchemaInput.ColumnName schemaFieldTypeMapping provider
+                genColumnSqlLine extractedSchemaInput schemaFieldTypeMapping provider
             | None ->
                 failwithf
                     "Unable to parse input schema definition for %s:%s"
