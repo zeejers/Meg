@@ -75,7 +75,13 @@ and GenMigrationArgs =
             match this with
             | Provider _ -> "Specify the database provider."
             | Schema_Definition _ ->
-                "Specify the schema definition of the migration. Format MigrationName TableName Id:Id Name:String Description:Text"
+                // let p = System.Environment.GetEnvironmentVariable("DB_PROVIDER")
+
+                let provider = Defaults.DB_PROVIDER
+
+                let schemaHelp = schemaDefintionCliUsageDescriptions (provider)
+
+                $"Specify the schema definition of the migration in this format:\n-----------\nmeg gen migration AddUsersTable users Id:Id Name:String Description:Text\n-----------\nList of all schema types for {provider} (see your provider by setting DB_PROVIDER) :\n{schemaHelp}"
             | OutputDir _ ->
                 "The output directory to write migrations to. When not specified, the resulting SQL is written to env var MIGRATION_DIRECTORY value, defaults to 'Migrations'"
 

@@ -7,13 +7,6 @@ type MegConfig =
       DB_PROVIDER: SqlProvider
       MIGRATION_DIRECTORY: string }
 
-let parseSqlProvider (providerName: string) =
-    match providerName.ToUpper() with
-    | "POSTGRESQL" -> SqlProvider.PostgreSQL
-    | "MSSQL" -> SqlProvider.MSSQL
-    | "MYSQL" -> SqlProvider.MySql
-    | "SQLITE" -> SqlProvider.SQLite
-    | _ -> failwith $"Unsupported SQL Provider: {providerName}"
 
 let DB_CONNECTION_STRING =
     "Server=localhost; Port=54322; Database=postgres; User Id=postgres; Password=postgres;"
@@ -26,7 +19,7 @@ let Defaults =
       DB_PROVIDER =
         System.Environment.GetEnvironmentVariable("DB_PROVIDER")
         |> Option.ofObj
-        |> Option.map (fun p -> parseSqlProvider (p))
+        |> Option.map (fun p -> Providers.parseProvider (p))
         |> Option.defaultValue (SqlProvider.PostgreSQL)
       MIGRATION_DIRECTORY =
         System.Environment.GetEnvironmentVariable("MIGRATION_DIRECTORY")

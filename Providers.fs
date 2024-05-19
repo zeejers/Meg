@@ -192,6 +192,14 @@ type SQLiteTable<'T>(tableName: string) =
             |> conn.DeleteAsync
 
 
+let parseProvider (p: string) =
+    match p.ToLower() with
+    | "postgresql" -> SqlProvider.PostgreSQL
+    | "mssql" -> SqlProvider.MSSQL
+    | "mysql" -> SqlProvider.MySql
+    | "sqlite" -> SqlProvider.SQLite
+    | _ -> SqlProvider.PostgreSQL
+
 let createPostgreSqlConnection (connectionString: string) () : SqlProviderConnection =
     new Npgsql.NpgsqlConnection(connectionString) :> SqlProviderConnection
 
