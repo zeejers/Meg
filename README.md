@@ -2,7 +2,9 @@
 
 # Meg - Dotnet Migration Tool
 
-Meg is an extremely simple migration command line tool that is inspired by conventions of tools such as rake and ecto. Support for Postgresql, MSSQL, MySql, and SQLite.
+Meg is a simple migration command line tool that is inspired by conventions of tools such as rake and ecto, and Saturn.Cli. Its the missing migration tool that I wish dotnet had.
+
+Support for Postgresql, with limited / experimental support for MSSQL, MySql, and SQLite is provided.
 
 - `create` - Creates initial database by name.
 - `drop` - Drops a database by name.
@@ -10,6 +12,8 @@ Meg is an extremely simple migration command line tool that is inspired by conve
 - `migrate` - Runs migrations in the specified migration folder. Defaults to folder "Migrations". Migrations are just SQL scripts.
 - `gen` - Generates a migration via meg DSL.
 - `env` - Print the meg environment to see what your default database connection strings, migration folder, and db provider are.
+
+Why not just use Saturn.Cli? I like Saturn.Cli, but it feels somewhat coupled to the Saturn framework, and I prefer to use other frameworks like Giraffe independently. I wanted a Framework agnostic tool.
 
 ## Install
 
@@ -33,7 +37,7 @@ meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg gen migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
+meg gen.migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
 
 #> Wrote migration Migrations/1716128697_AddUsersTable.SQL
 
@@ -53,19 +57,19 @@ CREATE TABLE "users" (
 
 ### Env Vars
 
-You can supplement command line usage with some ENV vars in your project to reduce how often you have to enter params in the command line. Having these set will allow them to be used as defaults.
+You can supplement command line usage with some ENV vars in your project to make it even easier to use Meg. Having these vars set will allow them to be used as defaults.
 
 ```bash
-DB_CONNECTION_STRING # The connection string used by 'create', 'drop' and 'migrate' commands.
-DB_PROVIDER # postgres | mssql | mysql | sqlite
-MIGRATION_DIRECTORY # directory of your migrations, defaults to "./Migrations"
+DB_CONNECTION_STRING # The connection string used by 'create', 'drop' and 'migrate' commands. Default if --connection-string isn't set.
+DB_PROVIDER # postgresql | mssql | mysql | sqlite. Default if --provider isn't set.
+MIGRATION_DIRECTORY # directory of your migrations. Default if --migration-directory isn't set.
 ```
 
 Example using direnv .envrc
 
 ```bash
 export DB_CONNECTION_STRING="Host=localhost;Database=postgres;Username=postgres;Password=postgres;"
-export DB_PROVIDER=postgres # postgres | mssql | mysql | sqlite
+export DB_PROVIDER=postgresql # postgresql | mssql | mysql | sqlite
 export MIGRATION_DIRECTORY=Migrations # directory of your migrations, defaults to "./Migrations"
 ```
 
@@ -90,9 +94,9 @@ meg migrate -d my_new_db
 ```
 
 #### Meg Env
-
+Utility command to print your meg env. Meg defaults to a localhost postgres connection string, with PostgreSQL as the provider and Migrations as the migration directory.
 ```bash
-meg env # utility command to print your meg env
+meg env
 # > DB_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
 # > DB_PROVIDER: PostgreSQL
 # > MIGRATION_DIRECTORY: Migrations
