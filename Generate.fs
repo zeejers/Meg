@@ -339,6 +339,7 @@ let parseSchemaFieldType (inputType: string) : option<SchemaFieldType> =
     | "time" -> Some SchemaTime
     | "timestamp" -> Some SchemaUtcDateTime
     | "utcdatetime" -> Some SchemaUtcDateTime
+    | "datetime" -> Some SchemaUtcDateTime
     | "datetimetz" -> Some SchemaDateTimeTz
     | _ -> None
 

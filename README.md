@@ -94,7 +94,9 @@ meg migrate -d my_new_db
 ```
 
 #### Meg Env
+
 Utility command to print your meg env. Meg defaults to a localhost postgres connection string, with PostgreSQL as the provider and Migrations as the migration directory.
+
 ```bash
 meg env
 # > DB_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
@@ -187,7 +189,7 @@ OPTIONS:
 
 You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`. You can modify the output SQL after its generated if desired. All SQL is generated assuming you are CREATING a new table.
 
-Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings. 
+Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings.
 
 Example command with break down:
 `meg gen migration AddPostsTable posts Id:Guid Name:String UserId:Guid:References:Users:Id`
@@ -198,7 +200,6 @@ Example command with break down:
 `Id:Guid Name:String UserId:Guid:References:Users:Id` - schema definition
 
 > ⚠️ **WARNING:** If you are using Guid field with PostgreSQL, make sure you've installed the required extension to support generating uuids using `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`.
-
 
 ```bash
 $USAGE: meg gen migration [--help] [--provider <postgresql|mssql|mysql|sqlite>]
