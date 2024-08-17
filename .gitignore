@@ -5,3 +5,4 @@ bin
 nupkg
 .fake
 .mono
+.*.temp

@@ -19,13 +19,14 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
-    <Compile Include="Providers.fs" />
-    <Compile Include="Config.fs" />
-    <Compile Include="Create.fs" />
-    <Compile Include="Drop.fs" />
-    <Compile Include="Migrate.fs" />
-    <Compile Include="Generate.fs" />
-    <Compile Include="Program.fs" />
+    <Compile Include="src/Expressions/CreateTable.fs" />
+    <Compile Include="src/Providers.fs" />
+    <Compile Include="src/Config.fs" />
+    <Compile Include="src/Operations/Create.fs" />
+    <Compile Include="src/Operations/Drop.fs" />
+    <Compile Include="src/Operations/Migrate.fs" />
+    <Compile Include="src/Operations/Generate.fs" />
+    <Compile Include="src/Program.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,0 @@
-CREATE TABLE "todos" (
-	"Id" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	"Name" VARCHAR(255),
-	"CreatedAt" TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
-	"UpdatedAt" TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc')
-);
