@@ -118,7 +118,7 @@ let columnToString (col: Column) (sqlProvider: SqlProvider) =
     let quoteChar = Providers.getQuoteChar sqlProvider
     sprintf "%s%s%s %s %s" quoteChar col.Name quoteChar (getSchemaMigrationValue col.Type sqlProvider) constraints
 
-let tableToSql (table: Table) (sqlProvider: SqlProvider) =
+let toSql (table: Table) (sqlProvider: SqlProvider) =
     let columnsSql =
         table.Columns
         |> List.rev

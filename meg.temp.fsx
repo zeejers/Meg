@@ -25,7 +25,7 @@ let up () =
             addColumn "created_at" DateTime [ NotNull ]
         }
 
-    let s = tableToSql table SqlProvider.PostgreSQL
+    let s = toSql table SqlProvider.PostgreSQL
     printfn $"sql: {s}"
 // let m = migration ()
 // let conn = System.Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
