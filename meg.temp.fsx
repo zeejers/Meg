@@ -3,6 +3,7 @@
 open Meg.Migrate
 open Meg.Expressions.CreateTable
 open Meg.Schema
+open Meg.Providers
 
 let migration () =
     """
@@ -18,13 +19,13 @@ let up () =
 
     let table =
         create_table {
-            table "users"
-            addColumn "id" FieldType.Id [ PrimaryKey; NotNull ]
-            addColumn "name" FieldType.String [ NotNull ]
-            addColumn "created_at" FieldType.DateTime [ NotNull ]
+            table "Users"
+            addColumn "id" Id [ PrimaryKey; NotNull ]
+            addColumn "name" String [ NotNull ]
+            addColumn "created_at" DateTime [ NotNull ]
         }
 
-    let s = table |> tableToSql
+    let s = tableToSql table SqlProvider.PostgreSQL
     printfn $"sql: {s}"
 // let m = migration ()
 // let conn = System.Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")

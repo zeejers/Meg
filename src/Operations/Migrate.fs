@@ -6,7 +6,6 @@ open Npgsql
 open Meg.Providers
 open System.Text.RegularExpressions
 
-
 let runSqlScript (sqlContext: SqlContext, sql: string, version: string option) =
     let queryResult = sqlContext.ExecuteNonQuery(sql)
     let timestamp = System.DateTime.UtcNow.ToString("o")

@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
@@ -14,8 +13,6 @@
     <Description>Meg is an open source DB migration tool with a focus on ease of use and simplicity.</Description>
     <PackageTags>migration;migrations;mssql;mysql;sqlite;npgsql;postgresql;postgres;database;sql</PackageTags>
   </PropertyGroup>
-  
-
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
@@ -29,7 +26,6 @@
     <Compile Include="src/Operations/Generate.fs" />
     <Compile Include="src/Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Dapper" Version="2.1.24" />
@@ -39,5 +35,4 @@
     <PackageReference Include="Npgsql.FSharp" Version="5.7.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
-
 </Project>

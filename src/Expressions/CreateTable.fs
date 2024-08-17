@@ -18,29 +18,3 @@ type CreateTableBuilder() =
                 :: state.Columns }
 
 let create_table = CreateTableBuilder()
-
-let columnTypeToString =
-    function
-    | FieldType.Integer -> "INT"
-    | FieldType.String -> "VARCHAR(255)"
-    | FieldType.Boolean -> "BOOLEAN"
-    | FieldType.DateTime -> "DATETIME"
-    | _ -> "NOT YET SUPPORTED"
-
-let constraintToString =
-    function
-    | PrimaryKey -> "PRIMARY KEY"
-    | NotNull -> "NOT NULL"
-    | Unique -> "UNIQUE"
-
-let columnToString (col: Column) =
-    let constraints =
-        col.Constraints |> List.map constraintToString |> String.concat " "
-
-    sprintf "%s %s %s" col.Name (columnTypeToString col.Type) constraints
-
-let tableToSql (table: Table) =
-    let columnsSql =
-        table.Columns |> List.rev |> List.map columnToString |> String.concat ", "
-
-    sprintf "CREATE TABLE %s (%s);" table.Name columnsSql

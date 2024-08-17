@@ -212,6 +212,11 @@ let createMySQLConnection (connectionString: string) () : SqlProviderConnection 
 let createSQLiteConnection (connectionString: string) () : SqlProviderConnection =
     new SqliteConnection(connectionString) :> SqlProviderConnection
 
+let getQuoteChar (sqlProvider: SqlProvider) =
+    match sqlProvider with
+    | SqlProvider.MySql -> "`"
+    | _ -> "\""
+
 type SqlContext(strategy: ISqlExecutionStrategy) =
     member val migrationsTableName = "schema_migrations"
     member val migrationsTableColumnDefinitions = [ "version", "VARCHAR(255)"; "inserted_at", "VARCHAR(255)" ]
