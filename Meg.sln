@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8CA1B0E6-ED77-4E7B-95BA-FCB9E85CF541}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Meg", "src\Meg\Meg.fsproj", "{1419D88B-4523-4F07-A7AB-548E7165FF41}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E84556CE-7775-45B4-B880-6F34783FFC1F}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Meg.Tests", "tests\Meg.Tests\Meg.Tests.fsproj", "{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1419D88B-4523-4F07-A7AB-548E7165FF41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1419D88B-4523-4F07-A7AB-548E7165FF41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1419D88B-4523-4F07-A7AB-548E7165FF41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1419D88B-4523-4F07-A7AB-548E7165FF41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1419D88B-4523-4F07-A7AB-548E7165FF41} = {8CA1B0E6-ED77-4E7B-95BA-FCB9E85CF541}
+		{0071CB78-A734-4B6C-B583-2AA2BE4FAB0F} = {E84556CE-7775-45B4-B880-6F34783FFC1F}
+	EndGlobalSection
+EndGlobal

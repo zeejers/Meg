@@ -135,35 +135,71 @@ let getSchemaMigrationValue (fieldType: FieldType) (provider: SqlProvider) =
     | None -> ""
 
 // Function to map field constraints to their SQL equivalents
-let getSchemaConstraintValue (schemaConstraint: FieldConstraint) =
+let getSchemaConstraintValue (schemaConstraint: FieldConstraint) (sqlProvider: SqlProvider) =
+    // Function to map field constraints to their SQL equivalents based on the SQL provider
     match schemaConstraint with
     | PrimaryKey -> "PRIMARY KEY"
     | NotNull -> "NOT NULL"
     | Unique -> "UNIQUE"
+    | ForeignKey(table) ->
+        match sqlProvider with
+        | SqlProvider.SQLite
+        | SqlProvider.PostgreSQL
+        | SqlProvider.MySql
+        | SqlProvider.MSSQL -> $"FOREIGN KEY REFERENCES {table}(id)"
+    | Check(expression) ->
+        match sqlProvider with
+        | SqlProvider.SQLite
+        | SqlProvider.PostgreSQL
+        | SqlProvider.MySql
+        | SqlProvider.MSSQL -> $"CHECK ({expression})"
+    | Default(value) ->
+        let valueStr =
+            match value with
+            | :? string as s -> $"'{s}'"
+            | :? int as i -> $"{i}"
+            | :? float as f -> $"{f}"
+            | _ -> failwith "Unsupported default value type"
 
-// Generate SQL string representation of a column configuration
-let columnToString (col: Column) (sqlProvider: SqlProvider) =
+        match sqlProvider with
+        | SqlProvider.SQLite
+        | SqlProvider.PostgreSQL
+        | SqlProvider.MySql
+        | SqlProvider.MSSQL -> $"DEFAULT {valueStr}"
+    | AutoIncrement ->
+        match sqlProvider with
+        | SqlProvider.SQLite -> "AUTOINCREMENT"
+        | SqlProvider.PostgreSQL -> "SERIAL"
+        | SqlProvider.MySql -> "AUTO_INCREMENT"
+        | SqlProvider.MSSQL -> "IDENTITY(1,1)"
+
+/// Generate SQL string representation of a column configuration, including the column primitive and constraints
+let columnValue (col: Column) (sqlProvider: SqlProvider) =
     let constraints =
-        col.Constraints |> List.map getSchemaConstraintValue |> String.concat " "
+        col.Constraints
+        |> List.map (fun c -> getSchemaConstraintValue c sqlProvider)
+        |> String.concat " "
 
     sprintf "%s %s" (getSchemaMigrationValue col.Type sqlProvider) constraints
 
-// Generate SQL statement for altering columns
+/// Generate SQL statement for altering column
 let columnAlterString (col: Column) (sqlProvider: SqlProvider) =
     let quoteChar = Providers.getQuoteChar sqlProvider
 
     match col.Operation with
     | ColumnOperation.Create ->
-        Some(sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnToString col sqlProvider))
+        Some(sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnValue col sqlProvider))
     | ColumnOperation.Remove -> Some(sprintf "DROP COLUMN %s%s%s" quoteChar col.Name quoteChar)
     | ColumnOperation.Modify ->
-        Some(sprintf "MODIFY COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnToString col sqlProvider))
+        Some(sprintf "MODIFY COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnValue col sqlProvider))
     | _ -> None
 
-// let columnCreateString (col: Column) (sqlProvider: SqlProvider) =
-//     let quoteChar = Providers.getQuoteChar sqlProvider
-//     sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar
-// Generate SQL statement for table operations
+/// Generate SQL statement for creating column
+let columnCreateString (col: Column) (sqlProvider: SqlProvider) =
+    let quoteChar = Providers.getQuoteChar sqlProvider
+    sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnValue col sqlProvider)
+
+/// Generate SQL statement for table operations
 let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
     let quoteChar = Providers.getQuoteChar sqlProvider
 
@@ -172,7 +208,7 @@ let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
         let columnsSql =
             table.Columns
             |> List.rev
-            |> List.map (fun col -> columnToString col sqlProvider)
+            |> List.map (fun col -> columnValue col sqlProvider)
             |> String.concat ", "
 
         sprintf "CREATE TABLE %s%s%s (%s);" quoteChar table.Name quoteChar columnsSql
@@ -187,6 +223,6 @@ let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
 
     | _ -> failwith "Unsupported table operation"
 
-// Convert a table definition to its SQL equivalent
+/// Convert a table definition to its SQL equivalent
 let toSql (sqlProvider: SqlProvider) (table: Table) =
     tableOperationToString sqlProvider table
