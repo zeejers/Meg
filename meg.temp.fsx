@@ -30,7 +30,7 @@ let up () =
         alter_table {
             table "Todos"
             removeColumn "Jj"
-            modifyColumn "Jojo" Integer [ NotNull ]
+            modifyColumn "Jojo" Integer []
             addColumn "Koko" String [ NotNull ]
         }
         |> toSql SqlProvider.PostgreSQL

@@ -26,6 +26,10 @@ type FieldConstraint =
     | PrimaryKey
     | NotNull
     | Unique
+    | ForeignKey of string // Points to another table's primary key
+    | Check of string // A check constraint expression
+    | Default of obj // Default value for the field
+    | AutoIncrement // Auto-incrementing field
 
 // Defining the operations that can be performed on columns
 type ColumnOperation =
@@ -156,6 +160,9 @@ let columnAlterString (col: Column) (sqlProvider: SqlProvider) =
         Some(sprintf "MODIFY COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnToString col sqlProvider))
     | _ -> None
 
+// let columnCreateString (col: Column) (sqlProvider: SqlProvider) =
+//     let quoteChar = Providers.getQuoteChar sqlProvider
+//     sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar
 // Generate SQL statement for table operations
 let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
     let quoteChar = Providers.getQuoteChar sqlProvider
