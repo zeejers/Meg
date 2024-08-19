@@ -1,7 +1,7 @@
 #r "bin/Debug/net8.0/Meg.dll"
 
 open Meg.Migrate
-open Meg.Expressions.CreateTable
+open Meg.Expressions
 open Meg.Schema
 open Meg.Providers
 
@@ -24,9 +24,21 @@ let up () =
             addColumn "name" String [ NotNull ]
             addColumn "created_at" DateTime [ NotNull ]
         }
+        |> toSql SqlProvider.PostgreSQL
 
-    let s = toSql table SqlProvider.PostgreSQL
-    printfn $"sql: {s}"
+    let modified_todos =
+        alter_table {
+            table "Todos"
+            removeColumn "Jj"
+            modifyColumn "Jojo" Integer [ NotNull ]
+            addColumn "Koko" String [ NotNull ]
+        }
+        |> toSql SqlProvider.PostgreSQL
+
+    let dropped_todos = drop_table { table "Toos" } |> toSql SqlProvider.PostgreSQL
+    printfn "SQL: %s" table
+    printfn "SQL2: %s" modified_todos
+    printfn "SQL3: %s" dropped_todos
 // let m = migration ()
 // let conn = System.Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
 // let sqlContext = Meg.Providers.SqlContext.Create(Meg.Providers.PostgreSQL, conn)
