@@ -208,7 +208,7 @@ let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
         let columnsSql =
             table.Columns
             |> List.rev
-            |> List.map (fun col -> columnValue col sqlProvider)
+            |> List.map (fun col -> columnCreateString col sqlProvider)
             |> String.concat ", "
 
         sprintf "CREATE TABLE %s%s%s (%s);" quoteChar table.Name quoteChar columnsSql

@@ -1,9 +1,11 @@
 module Meg.Generate
 
 open Meg.Providers
+open Meg.Schema
+open Meg.Expressions
 open System.IO
-open System.Text
 open System
+open System.Text
 
 // Reference to Ecto
 // Ecto type            	Elixir type             Literal syntax in query
@@ -28,23 +30,6 @@ open System
 
 
 
-type SchemaFieldType =
-    | SchemaId
-    | SchemaGuid
-    | SchemaInteger
-    | SchemaFloat
-    | SchemaNumeric
-    | SchemaBoolean
-    | SchemaString
-    | SchemaText
-    | SchemaBinary
-    | SchemaArray
-    | SchemaRecord
-    | SchemaDate
-    | SchemaTime
-    | SchemaUtcDateTime
-    | SchemaDateTimeTz
-
 
 type ColumnSchemaInput =
     { Name: string
@@ -55,97 +40,11 @@ type ColumnSchemaInput =
 
 type ColumnSchemaDefinition =
     { SchemaInput: ColumnSchemaInput
-      SchemaFieldType: SchemaFieldType
-      MigrationValue: string
-      DbPrimitive: string }
+      SchemaFieldType: FieldType
+      MigrationValue: string }
 
 
-let quoteIdentifier (identifier: string) (provider: SqlProvider) =
-    match provider with
-    | SqlProvider.MSSQL -> $"[{identifier}]"
-    | SqlProvider.MySql -> $"`{identifier}`"
-    | _ ->
-        let quote = "\""
-        $"{quote}{identifier}{quote}"
-
-let getSchemaMigrationValue (fieldType: SchemaFieldType) (provider: SqlProvider) (columnName: string) =
-    match provider with
-    | SqlProvider.PostgreSQL ->
-        match fieldType with
-        | SchemaId -> ("INTEGER", "INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY")
-        | SchemaGuid -> ("UUID", "UUID DEFAULT uuid_generate_v4() PRIMARY KEY")
-        | SchemaInteger -> ("INTEGER", "INTEGER")
-        | SchemaFloat -> ("FLOAT", "FLOAT")
-        | SchemaNumeric -> ("NUMERIC", "NUMERIC")
-        | SchemaBoolean -> ("BOOLEAN", "BOOLEAN")
-        | SchemaString -> ("VARCHAR(255)", "VARCHAR(255)")
-        | SchemaText -> ("TEXT", "TEXT")
-        | SchemaBinary -> ("BYTEA", "BYTEA")
-        | SchemaArray -> ("JSONB", "JSONB NOT NULL DEFAULT '[]'")
-        | SchemaRecord -> ("JSONB", "JSONB NOT NULL DEFAULT '{}'")
-        | SchemaDate -> ("DATE", "DATE")
-        | SchemaTime -> ("TIME", "TIME")
-        | SchemaUtcDateTime -> ("TIMESTAMP", "TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc')")
-        | SchemaDateTimeTz -> ("TIMESTAMP", "TIMESTAMP WITH TIME ZONE")
-    // ... other cases for Postgres
-    | SqlProvider.MySql ->
-        match fieldType with
-        | SchemaId -> ("INTEGER", "INT AUTO_INCREMENT PRIMARY KEY")
-        | SchemaGuid -> ("CHAR(36)", "CHAR(36) DEFAULT (UUID()) PRIMARY KEY")
-        | SchemaInteger -> ("INT", "INT")
-        | SchemaFloat -> ("FLOAT", "FLOAT")
-        | SchemaNumeric -> ("DECIMAL", "DECIMAL")
-        | SchemaBoolean -> ("TINYINT(1)", "TINYINT(1)")
-        | SchemaString -> ("VARCHAR(255)", "VARCHAR(255)")
-        | SchemaText -> ("TEXT", "TEXT")
-        | SchemaBinary -> ("BLOB", "BLOB")
-        | SchemaArray -> ("JSON", "JSON NOT NULL DEFAULT '[]'")
-        | SchemaRecord -> ("JSON", "JSON NOT NULL DEFAULT '{}'")
-        | SchemaDate -> ("DATE", "DATE")
-        | SchemaTime -> ("TIME", "TIME")
-        | SchemaUtcDateTime -> ("TIMESTAMP", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-        | SchemaDateTimeTz -> ("DATETIME", "DATETIME")
-
-    // ... other cases for MySQL
-    | SqlProvider.MSSQL ->
-        match fieldType with
-        | SchemaId -> ("INT", "INT IDENTITY PRIMARY KEY")
-        | SchemaGuid -> ("UNIQUEIDENTIFIER", "UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY")
-        | SchemaInteger -> ("INT", "INT")
-        | SchemaFloat -> ("FLOAT", "FLOAT")
-        | SchemaNumeric -> ("NUMERIC", "NUMERIC")
-        | SchemaBoolean -> ("BIT", "BIT")
-        | SchemaString -> ("NVARCHAR(255)", "NVARCHAR(255)")
-        | SchemaText -> ("NTEXT", "NTEXT")
-        | SchemaBinary -> ("VARBINARY(MAX)", "VARBINARY(MAX)")
-        | SchemaArray -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON({columnName})>0)")
-        | SchemaRecord -> ("NVARCHAR(MAX)", $"NVARCHAR(MAX) CHECK (ISJSON({columnName})>0)")
-        | SchemaDate -> ("DATE", "DATE")
-        | SchemaTime -> ("TIME", "TIME")
-        | SchemaUtcDateTime -> ("DATETIME2", "DATETIME2 DEFAULT GETUTCDATE()")
-        | SchemaDateTimeTz -> ("DATETIMEOFFSET", "DATETIMEOFFSET")
-    | SqlProvider.SQLite ->
-        match fieldType with
-        | SchemaId -> ("INTEGER", "INTEGER PRIMARY KEY AUTOINCREMENT")
-        | SchemaGuid ->
-            ("TEXT",
-             "TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89AB',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))")
-        | SchemaInteger -> ("INTEGER", "INTEGER")
-        | SchemaFloat -> ("REAL", "REAL")
-        | SchemaNumeric -> ("REAL", "REAL")
-        | SchemaBoolean -> ("INTEGER", $"INTEGER CHECK ({columnName} IN (0,1))")
-        | SchemaString -> ("TEXT", "TEXT")
-        | SchemaText -> ("TEXT", "TEXT")
-        | SchemaBinary -> ("BLOB", "BLOB")
-        | SchemaArray -> ("TEXT", "TEXT")
-        | SchemaRecord -> ("TEXT", "TEXT")
-        | SchemaDate -> ("TEXT", "TEXT")
-        | SchemaTime -> ("TEXT", "TEXT")
-        | SchemaUtcDateTime -> ("TEXT", "TEXT")
-        | SchemaDateTimeTz -> ("TEXT", "TEXT")
-
-
-let getSchemaFieldMapping (fieldType: SchemaFieldType) (schemaInput: ColumnSchemaInput) : ColumnSchemaDefinition =
+let getSchemaFieldMapping (fieldType: FieldType) (schemaInput: ColumnSchemaInput) : ColumnSchemaDefinition =
 
     let columnProperties =
         match schemaInput.Properties with
@@ -153,194 +52,180 @@ let getSchemaFieldMapping (fieldType: SchemaFieldType) (schemaInput: ColumnSchem
         | None -> ""
 
     match fieldType with
-    | SchemaId ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+    | FieldType.Id ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaGuid ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Guid ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaInteger ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Integer ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaFloat ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Float ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaNumeric ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Numeric ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaBoolean ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Boolean ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaString ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.String ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaText ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Text ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaBinary ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Binary ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaArray ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Array ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaRecord ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Record ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaDate ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Date ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaTime ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.Time ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaUtcDateTime ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.DateTime ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
-    | SchemaDateTimeTz ->
-        let (providerSchemaPrimitive, providerSchemaMigrationValue) =
-            getSchemaMigrationValue fieldType schemaInput.Provider schemaInput.Name
+          MigrationValue = providerSchemaMigrationValue }
+    | FieldType.DateTimeTz ->
+        let providerSchemaMigrationValue =
+            getSchemaMigrationValue fieldType schemaInput.Provider
 
         let providerSchemaMigrationValue =
             $"{providerSchemaMigrationValue}{columnProperties}"
 
         { SchemaInput = schemaInput
           SchemaFieldType = fieldType
-          MigrationValue = providerSchemaMigrationValue
-          DbPrimitive = providerSchemaPrimitive }
+          MigrationValue = providerSchemaMigrationValue }
+    | _ -> failwith "Unsupported field type."
 
-let parseSchemaFieldType (inputType: string) : option<SchemaFieldType> =
+let parseSchemaFieldType (inputType: string) : option<FieldType> =
     match inputType.ToLower() with
-    | "id" -> Some SchemaId
-    | "guid" -> Some SchemaGuid
-    | "uuid" -> Some SchemaGuid
-    | "integer" -> Some SchemaInteger
-    | "int" -> Some SchemaInteger
-    | "float" -> Some SchemaFloat
-    | "numeric" -> Some SchemaNumeric
-    | "bool" -> Some SchemaBoolean
-    | "boolean" -> Some SchemaBoolean
-    | "string" -> Some SchemaString
-    | "text" -> Some SchemaText
-    | "binary" -> Some SchemaBinary
-    | "array" -> Some SchemaArray
-    | "record" -> Some SchemaRecord
-    | "date" -> Some SchemaDate
-    | "time" -> Some SchemaTime
-    | "timestamp" -> Some SchemaUtcDateTime
-    | "utcdatetime" -> Some SchemaUtcDateTime
-    | "datetime" -> Some SchemaUtcDateTime
-    | "datetimetz" -> Some SchemaDateTimeTz
+    | "id" -> Some FieldType.Id
+    | "guid" -> Some FieldType.Guid
+    | "uuid" -> Some FieldType.Guid
+    | "integer" -> Some FieldType.Integer
+    | "int" -> Some FieldType.Integer
+    | "float" -> Some FieldType.Float
+    | "numeric" -> Some FieldType.Numeric
+    | "bool" -> Some FieldType.Boolean
+    | "boolean" -> Some FieldType.Boolean
+    | "string" -> Some FieldType.String
+    | "text" -> Some FieldType.Text
+    | "binary" -> Some FieldType.Binary
+    | "array" -> Some FieldType.Array
+    | "record" -> Some FieldType.Record
+    | "date" -> Some FieldType.Date
+    | "time" -> Some FieldType.Time
+    | "timestamp" -> Some FieldType.DateTime
+    | "utcdatetime" -> Some FieldType.DateTime
+    | "datetime" -> Some FieldType.DateTime
+    | "datetimetz" -> Some FieldType.DateTimeTz
     | _ -> None
 
 let sampleInput (t: string) (provider: SqlProvider) =
@@ -351,48 +236,59 @@ let sampleInput (t: string) (provider: SqlProvider) =
       Provider = provider }
 
 let schemaDefintionCliUsageDescriptions (provider: SqlProvider) =
-    let helpId = getSchemaFieldMapping SchemaId (sampleInput "id" provider)
-    let helpGuid = getSchemaFieldMapping SchemaGuid (sampleInput "guid" provider)
-    let helpInteger = getSchemaFieldMapping SchemaInteger (sampleInput "int" provider)
-    let helpFloat = getSchemaFieldMapping SchemaFloat (sampleInput "float" provider)
+    let helpId = getSchemaFieldMapping FieldType.Id (sampleInput "id" provider)
+    let helpGuid = getSchemaFieldMapping FieldType.Guid (sampleInput "guid" provider)
+
+    let helpInteger =
+        getSchemaFieldMapping FieldType.Integer (sampleInput "int" provider)
+
+    let helpFloat = getSchemaFieldMapping FieldType.Float (sampleInput "float" provider)
 
     let helpNumeric =
-        getSchemaFieldMapping SchemaNumeric (sampleInput "numeric" provider)
+        getSchemaFieldMapping FieldType.Numeric (sampleInput "numeric" provider)
 
     let helpBoolean =
-        getSchemaFieldMapping SchemaBoolean (sampleInput "boolean" provider)
+        getSchemaFieldMapping FieldType.Boolean (sampleInput "boolean" provider)
 
-    let helpString = getSchemaFieldMapping SchemaString (sampleInput "string" provider)
-    let helpText = getSchemaFieldMapping SchemaText (sampleInput "text" provider)
-    let helpBinary = getSchemaFieldMapping SchemaBinary (sampleInput "binary" provider)
-    let helpArray = getSchemaFieldMapping SchemaArray (sampleInput "array" provider)
-    let helpRecord = getSchemaFieldMapping SchemaRecord (sampleInput "record" provider)
-    let helpDate = getSchemaFieldMapping SchemaDate (sampleInput "date" provider)
-    let helpTime = getSchemaFieldMapping SchemaTime (sampleInput "time" provider)
+    let helpString =
+        getSchemaFieldMapping FieldType.String (sampleInput "string" provider)
+
+    let helpText = getSchemaFieldMapping FieldType.Text (sampleInput "text" provider)
+
+    let helpBinary =
+        getSchemaFieldMapping FieldType.Binary (sampleInput "binary" provider)
+
+    let helpArray = getSchemaFieldMapping FieldType.Array (sampleInput "array" provider)
+
+    let helpRecord =
+        getSchemaFieldMapping FieldType.Record (sampleInput "record" provider)
+
+    let helpDate = getSchemaFieldMapping FieldType.Date (sampleInput "date" provider)
+    let helpTime = getSchemaFieldMapping FieldType.Time (sampleInput "time" provider)
 
     let helpDateTime =
-        getSchemaFieldMapping SchemaUtcDateTime (sampleInput "datetime" provider)
+        getSchemaFieldMapping FieldType.DateTime (sampleInput "datetime" provider)
 
     let helpDateTimetz =
-        getSchemaFieldMapping SchemaDateTimeTz (sampleInput "datetimetz" provider)
+        getSchemaFieldMapping FieldType.DateTimeTz (sampleInput "datetimetz" provider)
 
 
     $"""
-Id              an integer autoincrementing primary key. Maps to {helpId.DbPrimitive}.
-Guid            Sane default (uuid PK) for dotnet guids. Maps to {helpGuid.DbPrimitive}.
-Integer         Maps to {helpInteger.DbPrimitive}.
-Float           Maps to {helpFloat.DbPrimitive}.
-Numeric         Maps to {helpNumeric.DbPrimitive}.
-Boolean         Maps to {helpBoolean.DbPrimitive}.
-String          Maps to {helpString.DbPrimitive}.
-Text            Maps to {helpText.DbPrimitive}.
-Binary          Maps to {helpBinary.DbPrimitive}.
-Array           Maps to {helpArray.DbPrimitive}.
-Record          Maps to {helpRecord.DbPrimitive}.
-Date            Maps to {helpDate.DbPrimitive}.
-Time            Maps to {helpTime.DbPrimitive}.
-DateTime        Timestamp without TZ. Maps to {helpDateTime.DbPrimitive}.
-DateTimeTz      Timestamp with TZ. Maps to {helpDateTimetz.DbPrimitive}.
+Id              an integer autoincrementing primary key. Maps to {helpId.MigrationValue}.
+Guid            Sane default (uuid PK) for dotnet guids. Maps to {helpGuid.MigrationValue}.
+Integer         Maps to {helpInteger.MigrationValue}.
+Float           Maps to {helpFloat.MigrationValue}.
+Numeric         Maps to {helpNumeric.MigrationValue}.
+Boolean         Maps to {helpBoolean.MigrationValue}.
+String          Maps to {helpString.MigrationValue}.
+Text            Maps to {helpText.MigrationValue}.
+Binary          Maps to {helpBinary.MigrationValue}.
+Array           Maps to {helpArray.MigrationValue}.
+Record          Maps to {helpRecord.MigrationValue}.
+Date            Maps to {helpDate.MigrationValue}.
+Time            Maps to {helpTime.MigrationValue}.
+DateTime        Timestamp without TZ. Maps to {helpDateTime.MigrationValue}.
+DateTimeTz      Timestamp with TZ. Maps to {helpDateTimetz.MigrationValue}.
 
 -- References --
 You can include references using
@@ -430,10 +326,12 @@ let extractSchemaInput (input: string) (provider: SqlProvider) : ColumnSchemaInp
           References = Some referenceField
           Provider = provider }
     | [ columnName; columnType; references; referenceTable; referenceField ] when references.ToUpper() = "REFERENCES" ->
+        let quoteChar = getQuoteChar provider
+
         { Name = columnName
           Type = columnType
           Properties = None
-          References = Some $"{quoteIdentifier referenceTable provider}({quoteIdentifier referenceField provider})"
+          References = Some referenceTable
           Provider = provider }
     // TODO: BE MORE CLEVER ABOUT THE PARSING OF 2nd TO LAST OR 3rd TO LAST BEING "REFERENCE" VALUE
     | columnName :: columnType :: additionalProperties when
@@ -454,7 +352,7 @@ let extractSchemaInput (input: string) (provider: SqlProvider) : ColumnSchemaInp
         { Name = columnName
           Type = columnType
           Properties = Some(trimmedAdditionalProperties |> String.concat " ")
-          References = Some $"{quoteIdentifier referenceTable provider}({quoteIdentifier referenceField provider})"
+          References = Some referenceTable
           Provider = provider }
     | columnName :: columnType :: additionalProperties when
         List.length additionalProperties >= 2
@@ -470,7 +368,7 @@ let extractSchemaInput (input: string) (provider: SqlProvider) : ColumnSchemaInp
         { Name = columnName
           Type = columnType
           Properties = Some(trimmedAdditionalProperties |> String.concat " ")
-          References = Some $"{quoteIdentifier referenceTableWithField provider}"
+          References = Some referenceTableWithField
           Provider = provider }
 
     | columnName :: columnType :: additionalProperties ->
@@ -492,27 +390,6 @@ let mkdirSafe dirPath =
         Directory.CreateDirectory(dirPath) |> ignore
         ()
 
-let genColumnSqlLine (schemaDefinition: ColumnSchemaDefinition) =
-    let quotedColumnName =
-        quoteIdentifier schemaDefinition.SchemaInput.Name schemaDefinition.SchemaInput.Provider
-
-    match schemaDefinition.SchemaInput.References with
-    | None -> $"\t{quotedColumnName} {schemaDefinition.MigrationValue}"
-    | Some _ ->
-        // If its a reference field, we need to only include the column and its propreties
-        let properties =
-            match schemaDefinition.SchemaInput.Properties with
-            | None -> ""
-            | Some properties -> $" {properties}"
-
-        $"\t{quotedColumnName} {schemaDefinition.DbPrimitive}{properties}"
-
-let genReferenceSqlLine (schemaDefinition: ColumnSchemaDefinition) =
-    let quotedColumnName =
-        quoteIdentifier schemaDefinition.SchemaInput.Name schemaDefinition.SchemaInput.Provider
-
-    sprintf "\tFOREIGN KEY (%s) REFERENCES %s" quotedColumnName schemaDefinition.SchemaInput.References.Value
-
 let genMigrations
     (migrationName: string)
     (tableName: string)
@@ -521,7 +398,7 @@ let genMigrations
     (outputDir: string)
     =
 
-    let schemaDefinitions =
+    let schemaDefinitions: ColumnSchemaDefinition list =
         schemaDefinitionsInput
         |> List.map (fun inp ->
             let schemaInput = extractSchemaInput inp provider
@@ -533,33 +410,23 @@ let genMigrations
 
             getSchemaFieldMapping schemaFieldType schemaInput)
 
-    let sql =
+    let columns =
         schemaDefinitions
-        |> List.map (fun schemaDefinition ->
-            match (parseSchemaFieldType schemaDefinition.SchemaInput.Type) with
-            | Some t ->
+        |> List.map (fun sd ->
+            let constraints =
+                match sd.SchemaInput.References with
+                | Some reference -> [ FieldConstraint.ForeignKey reference ]
+                | None -> []
 
-                genColumnSqlLine schemaDefinition
-            | None ->
-                failwithf
-                    "Unable to parse input schema definition for %s:%s"
-                    schemaDefinition.SchemaInput.Name
-                    schemaDefinition.SchemaInput.Type)
-        |> String.concat (",\n")
-
-    let referencesSql =
-        schemaDefinitions
-        |> List.filter (fun schemaDefinition -> schemaDefinition.SchemaInput.References.IsSome)
-        |> List.map (fun schemaDefinition -> genReferenceSqlLine schemaDefinition)
-        |> String.concat (",\n")
+            (sd.SchemaInput.Name, sd.SchemaFieldType, constraints))
 
     let sql =
-        match referencesSql with
-        | "" -> sql
-        | referencesSql -> $"{sql},\n{referencesSql}"
+        create_table {
+            table tableName
+            addColumns columns
+        }
+        |> toSql provider
 
-    let tableName = quoteIdentifier tableName provider
-    let sql = $"CREATE TABLE {tableName} (\n{sql}\n);"
     let unixEpochCalc = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
     mkdirSafe outputDir
     let filePath = Path.Combine([| outputDir; $"{unixEpochCalc}_{migrationName}.SQL" |])

@@ -1,0 +1,1 @@
+CREATE TABLE "users" (ADD COLUMN "dad" INTEGER , ADD COLUMN "name" VARCHAR(255) );
