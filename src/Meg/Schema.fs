@@ -26,10 +26,10 @@ type FieldConstraint =
     | PrimaryKey
     | NotNull
     | Unique
-    | ForeignKey of string // Points to another table's primary key
     | Check of string // A check constraint expression
     | Default of obj // Default value for the field
     | AutoIncrement // Auto-incrementing field
+    | ForeignKey of (string * string)
 
 // Defining the operations that can be performed on columns
 type ColumnOperation =
@@ -173,11 +173,21 @@ let getSchemaConstraintValue (schemaConstraint: FieldConstraint) (sqlProvider: S
         | SqlProvider.MySql -> "AUTO_INCREMENT"
         | SqlProvider.MSSQL -> "IDENTITY(1,1)"
 
+let getInlineSchemaConstraintValue (fieldConstraint: FieldConstraint) (sqlProvider: SqlProvider) =
+    match fieldConstraint with
+    | FieldConstraint.PrimaryKey -> ""
+    | _ -> getSchemaConstraintValue fieldConstraint sqlProvider
+
+let getTableConstraintValue (fieldConstraint: FieldConstraint) (sqlProvider: SqlProvider) =
+    match fieldConstraint with
+    | FieldConstraint.PrimaryKey -> getSchemaConstraintValue fieldConstraint sqlProvider
+    | _ -> ""
+
 /// Generate SQL string representation of a column configuration, including the column primitive and constraints
 let columnValue (col: Column) (sqlProvider: SqlProvider) =
     let constraints =
         col.Constraints
-        |> List.map (fun c -> getSchemaConstraintValue c sqlProvider)
+        |> List.map (fun c -> getInlineSchemaConstraintValue c sqlProvider)
         |> String.concat " "
 
     sprintf "%s %s" (getSchemaMigrationValue col.Type sqlProvider) constraints
@@ -199,6 +209,12 @@ let columnCreateString (col: Column) (sqlProvider: SqlProvider) =
     let quoteChar = Providers.getQuoteChar sqlProvider
     sprintf "ADD COLUMN %s%s%s %s" quoteChar col.Name quoteChar (columnValue col sqlProvider)
 
+let tableConstraintString (col: Column) (sqlProvider: SqlProvider) =
+    col.Constraints
+    |> List.rev
+    |> List.map (fun fieldConstraint -> getTableConstraintValue fieldConstraint sqlProvider)
+    |> String.concat ", "
+
 /// Generate SQL statement for table operations
 let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
     let quoteChar = Providers.getQuoteChar sqlProvider
@@ -209,9 +225,15 @@ let tableOperationToString (sqlProvider: SqlProvider) (table: Table) =
             table.Columns
             |> List.rev
             |> List.map (fun col -> columnCreateString col sqlProvider)
-            |> String.concat ", "
 
-        sprintf "CREATE TABLE %s%s%s (%s);" quoteChar table.Name quoteChar columnsSql
+        let tableConstraintsSql =
+            table.Columns
+            |> List.rev
+            |> List.map (fun col -> tableConstraintString col sqlProvider)
+
+        let tableSql = (columnsSql @ tableConstraintsSql) |> String.concat ", "
+
+        sprintf "CREATE TABLE %s%s%s (%s);" quoteChar table.Name quoteChar tableSql
     | TableOperation.Alter ->
         let alterStatements =
             table.Columns
