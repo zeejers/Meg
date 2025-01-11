@@ -17,9 +17,9 @@ type CreateArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Db_Name _ -> "Specify the name of the database to create."
+            | Db_Name _ -> "Specify the name of the database to create. Defaults to DB_NAME."
             | Connection_String _ ->
-                "Specify the database connection string for the Admin database. Must be able to create DBs with the permissions of the user."
+                "Specify the admin database connection string. Must be able to create DBs with the permissions of the user. Defaults to DB_CONNECTION_STRING."
             | Provider _ -> "Specify the database provider."
 
 
@@ -31,10 +31,10 @@ and DropArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Db_Name _ -> "Specify the name of the database to create."
+            | Db_Name _ -> "Specify the name of the database to create. Defaults to DB_NAME."
             | Connection_String _ ->
-                "Specify the database connection string for the Admin database. Must be able to create DBs with the permissions of the user."
-            | Provider _ -> "Specify the database provider."
+                "Specify the admin database connection string. Must be able to create DBs with the permissions of the user. Defaults to DB_CONNECTION_STRING."
+            | Provider _ -> "Specify the database provider. Defaults to DB_PROVIDER."
 
 and ResetArgs =
     | [<AltCommandLine("-d")>] Db_Name of db_name: string
@@ -44,9 +44,9 @@ and ResetArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Db_Name _ -> "Specify the name of the database to reset."
+            | Db_Name _ -> "Specify the name of the database to reset. Defaults to DB_NAME."
             | Connection_String _ ->
-                "Specify the database connection string for the Admin database. Must be able to create DBs with the permissions of the user."
+                "Specify the admin database connection string. Must be able to create DBs with the permissions of the user. Defaults to DB_CONNECTION_STRING."
             | Provider _ -> "Specify the database provider."
 
 and MigrateArgs =
@@ -59,10 +59,11 @@ and MigrateArgs =
         member this.Usage =
             match this with
             | Connection_String _ ->
-                "Specify the database connection string for the database. Must be able to create and update tables  with the permissions of the user."
-            | Migration_Directory _ -> "Specify the directory that contains your order-named migration .SQL files."
-            | Provider _ -> "Specify the database provider."
-            | Db_Name _ -> "Sepcify the database name."
+                "Specify the admin database connection string. Must be able to create and update tables with the permissions of the user. Defaults to DB_CONNECTION_STRING."
+            | Migration_Directory _ ->
+                "Specify the directory that contains your order-named migration .SQL files. Defaults to DB_MIGRATION_DIRECTORY."
+            | Provider _ -> "Specify the database provider. Defaults to DB_PROVIDER."
+            | Db_Name _ -> "Sepcify the database name. Defaults to DB_NAME."
 
 // Example: meg gen migration add_users_table Users Name:String Id:Serial:Key
 and GenMigrationArgs =
@@ -73,7 +74,7 @@ and GenMigrationArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Provider _ -> "Specify the database provider."
+            | Provider _ -> "Specify the database provider. Defaults to DB_PROVIDER."
             | Schema_Definition _ ->
                 // let p = System.Environment.GetEnvironmentVariable("DB_PROVIDER")
 
@@ -83,7 +84,7 @@ and GenMigrationArgs =
 
                 $"Specify the schema definition of the migration in this format:\n-----------\nmeg gen migration AddUsersTable users Id:Id Name:String Description:Text\n-----------\nList of all schema types for {provider} (see your provider by setting DB_PROVIDER) :\n{schemaHelp}"
             | Migration_Directory _ ->
-                "The output directory to write migrations to. When not specified, the resulting SQL is written to env var MIGRATION_DIRECTORY value, defaults to 'Migrations'"
+                "The output directory to write migrations to. When not specified, the resulting SQL is written to env var DB_MIGRATION_DIRECTORY value, defaults to 'Migrations'"
 
 and GenArgs =
     | [<CliPrefix(CliPrefix.None)>] Migration of ParseResults<GenMigrationArgs>
@@ -120,7 +121,13 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
             args.TryGetResult(CreateArgs.Connection_String)
             |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
-        let dbName = args.GetResult(CreateArgs.Db_Name)
+        let dbName =
+            match args.TryGetResult(CreateArgs.Db_Name) with
+            | Some value -> value
+            | None ->
+                match Defaults.DB_NAME with
+                | None -> failwith "DB_NAME cannot be None if -d is not specified."
+                | Some value -> value
 
         let provider =
             args.TryGetResult(CreateArgs.Provider)
@@ -132,7 +139,13 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
             args.TryGetResult(DropArgs.Connection_String)
             |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
-        let dbName = args.GetResult(DropArgs.Db_Name)
+        let dbName =
+            match args.TryGetResult(DropArgs.Db_Name) with
+            | Some value -> value
+            | None ->
+                match Defaults.DB_NAME with
+                | None -> failwith "DB_NAME cannot be None if -d is not specified."
+                | Some value -> value
 
         let provider =
             args.TryGetResult(DropArgs.Provider)
@@ -144,7 +157,13 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
             args.TryGetResult(ResetArgs.Connection_String)
             |> Option.defaultValue (Defaults.DB_CONNECTION_STRING)
 
-        let dbName = args.GetResult(ResetArgs.Db_Name)
+        let dbName =
+            match args.TryGetResult(ResetArgs.Db_Name) with
+            | Some value -> value
+            | None ->
+                match Defaults.DB_NAME with
+                | None -> failwith "DB_NAME cannot be None if -d is not specified."
+                | Some value -> value
 
         let provider =
             args.TryGetResult(ResetArgs.Provider)
@@ -163,9 +182,15 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
 
         let migrationsDirectory =
             args.TryGetResult(MigrateArgs.Migration_Directory)
-            |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
+            |> Option.defaultValue (Defaults.DB_MIGRATION_DIRECTORY)
 
-        let dbName = args.GetResult(MigrateArgs.Db_Name)
+        let dbName =
+            match args.TryGetResult(MigrateArgs.Db_Name) with
+            | Some value -> value
+            | None ->
+                match Defaults.DB_NAME with
+                | None -> failwith "DB_NAME cannot be None if -d is not specified."
+                | Some value -> value
 
         runMigrations (connString, migrationsDirectory, provider, dbName)
     | Gen args ->
@@ -178,13 +203,14 @@ let runProgram (parseResult: ParseResults<MegArgs>) =
 
             let outputDir =
                 args.TryGetResult(GenMigrationArgs.Migration_Directory)
-                |> Option.defaultValue (Defaults.MIGRATION_DIRECTORY)
+                |> Option.defaultValue (Defaults.DB_MIGRATION_DIRECTORY)
 
             match args.GetResult(GenMigrationArgs.Schema_Definition) with
             | schemaName :: tableName :: fields -> genMigrations schemaName tableName provider fields outputDir
             // genMigrations (migrationName, tableName, provider, schemaDefinitions)
             | _ -> failwith "You must provide a migration name, table name, and field definitions."
     | _ -> failwith "Invalid command provided."
+
 
 
 [<EntryPoint>]
@@ -199,10 +225,11 @@ let main argv =
             ()
         | [ Env ] ->
             printfn
-                "DB_CONNECTION_STRING=\"%s\"\nDB_PROVIDER=%s\nMIGRATION_DIRECTORY=%s"
+                "DB_CONNECTION_STRING=\"%s\"\nDB_PROVIDER=%s\nDB_MIGRATION_DIRECTORY=%s\nDB_NAME=%s"
                 Defaults.DB_CONNECTION_STRING
                 (Defaults.DB_PROVIDER |> string)
-                Defaults.MIGRATION_DIRECTORY
+                Defaults.DB_MIGRATION_DIRECTORY
+                (Defaults.DB_NAME |> Option.defaultValue "")
         | _ -> runProgram (parseResult)
 
 
