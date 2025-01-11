@@ -31,18 +31,18 @@ dotnet tool install meg
 ## QuickStart
 
 ```bash
-meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
+dotnet meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 #> Executing db command: SELECT 1 FROM pg_database WHERE datname='my_new_db'
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg gen.migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
+dotnet meg gen.migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
 
 #> Wrote migration Migrations/1716128697_AddUsersTable.SQL
 
 
-meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
+dotnet meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 # > Running Query from Script:
 CREATE TABLE "users" (
@@ -78,13 +78,13 @@ export DB_NAME=dev # directory of your migrations, defaults to "./Migrations"
 Then you can just call create / migrate without having to specify your connection string.
 
 ```bash
-meg create
+dotnet meg create
 
 #> Executing db command: SELECT 1 FROM pg_database WHERE datname='my_new_db'
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg migrate
+dotnet meg migrate
 
 # > Running Query from Script:
 # > CREATE TABLE TODOS (
@@ -100,7 +100,7 @@ meg migrate
 Utility command to print your meg env. Meg defaults to a localhost postgres connection string, with PostgreSQL as the provider and Migrations as the migration directory.
 
 ```bash
-meg env
+dotnet meg env
 # > DB_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
 # > DB_PROVIDER: PostgreSQL
 # > DB_MIGRATION_DIRECTORY: Migrations
