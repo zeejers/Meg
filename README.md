@@ -31,18 +31,18 @@ dotnet tool install meg
 ## QuickStart
 
 ```bash
-meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
+dotnet meg create -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 #> Executing db command: SELECT 1 FROM pg_database WHERE datname='my_new_db'
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg gen.migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
+dotnet meg gen.migration AddUsersTable users Id:Guid Name:String Email:String SubscriptionId:Guid:References:Subscriptions:Id
 
 #> Wrote migration Migrations/1716128697_AddUsersTable.SQL
 
 
-meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
+dotnet meg migrate -d my_new_db -c "Server=localhost;User Id=postgres;Password=postgres;Database=postgres;Port=5432;"
 
 # > Running Query from Script:
 CREATE TABLE "users" (
@@ -62,7 +62,8 @@ You can supplement command line usage with some ENV vars in your project to make
 ```bash
 DB_CONNECTION_STRING # The connection string used by 'create', 'drop' and 'migrate' commands. Default if --connection-string isn't set.
 DB_PROVIDER # postgresql | mssql | mysql | sqlite. Default if --provider isn't set.
-MIGRATION_DIRECTORY # directory of your migrations. Default if --migration-directory isn't set.
+DB_MIGRATION_DIRECTORY # directory of your migrations. Default if --migration-directory isn't set.
+DB_NAME # the name of your application database. Default if --database-name isn't set.
 ```
 
 Example using direnv .envrc
@@ -70,19 +71,20 @@ Example using direnv .envrc
 ```bash
 export DB_CONNECTION_STRING="Host=localhost;Database=postgres;Username=postgres;Password=postgres;"
 export DB_PROVIDER=postgresql # postgresql | mssql | mysql | sqlite
-export MIGRATION_DIRECTORY=Migrations # directory of your migrations, defaults to "./Migrations"
+export DB_MIGRATION_DIRECTORY=Migrations # directory of your migrations, defaults to "./Migrations"
+export DB_NAME=dev # directory of your migrations, defaults to "./Migrations"
 ```
 
 Then you can just call create / migrate without having to specify your connection string.
 
 ```bash
-meg create -d my_new_db
+dotnet meg create
 
 #> Executing db command: SELECT 1 FROM pg_database WHERE datname='my_new_db'
 #> Creating DB my_new_db because it doesn't exist yet
 #> Database 'my_new_db' created.
 
-meg migrate -d my_new_db
+dotnet meg migrate
 
 # > Running Query from Script:
 # > CREATE TABLE TODOS (
@@ -98,10 +100,11 @@ meg migrate -d my_new_db
 Utility command to print your meg env. Meg defaults to a localhost postgres connection string, with PostgreSQL as the provider and Migrations as the migration directory.
 
 ```bash
-meg env
+dotnet meg env
 # > DB_CONNECTION_STRING: Server=localhost;Port=54322;Database=postgres;User Id=postgres;Password=postgres;
 # > DB_PROVIDER: PostgreSQL
-# > MIGRATION_DIRECTORY: Migrations
+# > DB_MIGRATION_DIRECTORY: Migrations
+# > DB_NAME: dev
 ```
 
 # Usage
@@ -164,7 +167,7 @@ OPTIONS:
 
 ## Migrate
 
-Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending. Migrations are SQL scripts that are read from your configured migration directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`.
+Migrations will only run if they have not already been run based on entries that exist in your schema_migrations table. Migrations are unique by filename, and are executed in alphabetical order ascending. Migrations are SQL scripts that are read from your configured migration directory, either set by the env var `DB_MIGRATION_DIRECTORY` or by cli option `--migration-directory`.
 
 The schema_migrations table will be automatically created the first time you run `meg migrate` successfully.
 
@@ -187,7 +190,7 @@ OPTIONS:
 
 ## Gen Migrations
 
-You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `MIGRATION_DIRECTORY` or by cli option `--migration-directory`. You can modify the output SQL after its generated if desired. All SQL is generated assuming you are CREATING a new table.
+You can generate migrations using a convenient, limited DSL. The output is a SQL script which is written to your migrations directory, either set by the env var `DB_MIGRATION_DIRECTORY` or by cli option `--migration-directory`. You can modify the output SQL after its generated if desired. All SQL is generated assuming you are CREATING a new table.
 
 Each DB provider has different field representations that result from the DSL input. The `gen migration` command will generate field mappings based on the `DB_PROVIDER` which you have set either as an env var or passed in as the `--provider`. To see the definition of all these mappings, set `DB_PROVIDER` and the `meg gen migration --help` command will then update with the corresponding resulting schema mappings.
 
@@ -259,7 +262,7 @@ OPTIONS:
     --migration-directory, -o <migration directory>
                           The output directory to write migrations to. When not
                           specified, the resulting SQL is written to env var
-                          MIGRATION_DIRECTORY value, defaults to 'Migrations'
+                          DB_MIGRATION_DIRECTORY value, defaults to 'Migrations'
     --help                display this list of options.
 
 ```

@@ -5,7 +5,8 @@ open Meg.Providers
 type MegConfig =
     { DB_CONNECTION_STRING: string
       DB_PROVIDER: SqlProvider
-      MIGRATION_DIRECTORY: string }
+      DB_MIGRATION_DIRECTORY: string
+      DB_NAME: string option }
 
 
 let DB_CONNECTION_STRING =
@@ -21,7 +22,8 @@ let Defaults =
         |> Option.ofObj
         |> Option.map (fun p -> Providers.parseProvider (p))
         |> Option.defaultValue (SqlProvider.PostgreSQL)
-      MIGRATION_DIRECTORY =
-        System.Environment.GetEnvironmentVariable("MIGRATION_DIRECTORY")
+      DB_MIGRATION_DIRECTORY =
+        System.Environment.GetEnvironmentVariable("DB_MIGRATION_DIRECTORY")
         |> Option.ofObj
-        |> Option.defaultValue ("Migrations") }
+        |> Option.defaultValue ("Migrations")
+      DB_NAME = System.Environment.GetEnvironmentVariable("DB_NAME") |> Option.ofObj }
